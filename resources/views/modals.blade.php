@@ -13,20 +13,20 @@
                 <div class="modal-body">
                     @csrf
                     <div class="form-group has-feedback">
-                        <label for="module_nr">Modulnummer</label>
-                        <input type="text" class="form-control" name="module_nr" placeholder="563030" required>
+                        <label for="module_no">Modulnummer</label>
+                        <input type="text" class="form-control" name="module_no" placeholder="563030" required>
                         <span class="glyphicon glyphicon-asterisk form-control-feedback"></span>
                         <span class="text-danger">
-                            <strong id="module_nr-error"></strong>
+                            <strong id="module_no-error"></strong>
                         </span>
                     </div>
 
                     <div class="form-group has-feedback">
-                        <label for="module_name">Titel</label>
-                        <input type="text" class="form-control" name="module_name" placeholder="Datenbanken Grundlagen" required>
+                        <label for="module_title">Titel</label>
+                        <input type="text" class="form-control" name="module_title" placeholder="Datenbanken Grundlagen" required>
                         <span class="glyphicon glyphicon-asterisk form-control-feedback"></span>
                         <span class="text-danger">
-                            <strong id="module_name-error"></strong>
+                            <strong id="module_title-error"></strong>
                         </span>
                     </div>
 
@@ -71,20 +71,20 @@
                     <input type="hidden" name="id" id="courseId">
 
                     <div class="form-group has-feedback">
-                        <label for="module_nr">Modulnummer</label>
-                        <input type="text" class="form-control" name="module_nr" placeholder="563030" required id="editModuleNr">
+                        <label for="module_no">Modulnummer</label>
+                        <input type="text" class="form-control" name="module_no" placeholder="563030" required id="editModuleNr">
                         <span class="glyphicon glyphicon-asterisk form-control-feedback"></span>
                         <span class="text-danger">
-                            <strong id="editModal_module_nr-error"></strong>
+                            <strong id="editModal_module_no-error"></strong>
                         </span>
                     </div>
 
                     <div class="form-group has-feedback">
-                        <label for="module_name">Titel</label>
-                        <input type="text" class="form-control" name="module_name" placeholder="Datenbanken Grundlagen" required id="editModuleName">
+                        <label for="module_title">Titel</label>
+                        <input type="text" class="form-control" name="module_title" placeholder="Datenbanken Grundlagen" required id="editModuleName">
                         <span class="glyphicon glyphicon-asterisk form-control-feedback"></span>
                         <span class="text-danger">
-                            <strong id="editModal_module_name-error"></strong>
+                            <strong id="editModal_module_title-error"></strong>
                         </span>
                     </div>
 
@@ -127,7 +127,7 @@
                         <tbody>
                             <tr>
                                 <td>
-                                    <input type="text" name="id" placeholder="Unikennzeichen" required>
+                                    <input type="text" name="uni_identifier" placeholder="Unikennzeichen" required>
                                 </td>
                                 <td>
                                     <input type="text" name="grade" placeholder="Note" required>

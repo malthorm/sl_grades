@@ -7,10 +7,8 @@ $.ajaxSetup({
 $(document).ready(function (){
 
     // student frontend: modulnummer + matrikelnummer + pw DSGVO buch?
-    // modulname in titel ändern
     // TODO: add confirmation box alert sollte zeigen welche kurs gelöscht.
     // create ModelFactories
-    // create js modules with functions
     // checke bei delete ob module noch kurse oder studenten noch belegungen, sonst löschen?
     // delete Course
     $('#courseTable').delegate('.deletebtn', 'click', function(e){
@@ -79,13 +77,14 @@ $(document).ready(function (){
             data: $('#addGradeForm').serialize(),
             success: function(response){
                 if (response.studentGraded) {
-                    $('#gradeModalAlertMsg').append("<li>" + response.id + " bereits benotet</li>");
+                    $('#gradeModalAlertMsg').append("<li>" + response.uni_identifier + " bereits benotet</li>");
                     $('#gradeModalAlert').show();
                 } else {
+                    console.log(response);
                     $('#gradeModalAlert').hide();
                     $(entry.children()[0]).text(response.id);
                     $(entry.children()[1]).text(++gradeCount);
-                    $(entry.children()[2]).text(response.student_id);
+                    $(entry.children()[2]).text(response.uni_identifier);
                     $(entry.children()[3]).text(response.grade);
                     $('#modalGradesTable').prepend(entry);
                 }
@@ -237,22 +236,22 @@ $(document).ready(function (){
             url: '/courses',
             data: $('#courseAddForm').serialize(),
             success: function (response) {
-                // logging wahrsch eher im controller?
-                $('#courseTable').prepend(response);
+                $('#courseTable tbody').prepend(response);
                 $('#courseAddModal').modal('hide');
 
                 $('#ajaxAlert').show();
                 $('#ajaxAlertMsg').html('Veranstaltung hinzugefügt.');
             },
             error: function (response) {
-                // display response page + logging?
                 if (response.status === 422) {
                     let errors = response.responseJSON.errors;
                     for (error in errors) {
                         $('#' + error + '-error').html(errors[error][0]);
                     }
                 } else {
-                    //alert('ERRORPAGE');
+                    alert('Ein unerwarteter Fehler ist aufgetreten.');
+                    // logAjaxError(response);
+
                 }
             }
         });
@@ -260,14 +259,14 @@ $(document).ready(function (){
 
     // reset modal content when hidden
     $('#courseAddModal').on("hidden.bs.modal", function(){
-        $('#module_nr-error').html('');
-        $('#module_name-error').html('');
+        $('#module_no-error').html('');
+        $('#module_title-error').html('');
         $('#semester-error').html('');
         $('#courseAddModal input.form-control').val('');
     });
     $('#courseEditModal').on("hidden.bs.modal", function(){
-        $('#editModal_module_nr-error').html('');
-        $('#editModal_module_name-error').html('');
+        $('#editModal_module_no-error').html('');
+        $('#editModal_module_title-error').html('');
         $('#editModal_semester-error').html('');
         $('#courseEditFormErrors').hide();
     });
@@ -277,13 +276,4 @@ $(document).ready(function (){
         $('#modalGradesTable tbody').empty();
         $('#modalGradesTable tbody').append(entry);
     });
-
-    // no used?
-    function addGradeInputField(count)
-    {
-        let removeButton = '<button type="button" name="remove" id="'+count+'" class="btn btn-danger btn-xs remove">x</button>';
-        if (count > 1) {
-
-        }
-    }
 });

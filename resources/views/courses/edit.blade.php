@@ -5,7 +5,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 <div align="left">
-                    <h3>{{ $course->module->name }}: {{ $course->semester }}</h3>
+                    <h3>{{ $course->module->title }}: {{ $course->semester }}</h3>
                 </div>
                 <div align="right">
                     <form action="/courses/{{ $course->id }}" method="POST">
@@ -26,15 +26,15 @@
                     @method('PATCH')
                     @csrf
                     <div class="form-group row">
-                         <label for="module_nr" class="col-sm-2 col-form-label">Modulnummer</label>
+                         <label for="module_no" class="col-sm-2 col-form-label">Modulnummer</label>
                          <div class="col-sm-10">
-                            <input type="text" class="form-control" name="module_nr" placeholder="Modulnummer" required value="{{ $course->module->module_nr }}">
+                            <input type="text" class="form-control" name="module_no" placeholder="Modulnummer" required value="{{ $course->module->number }}">
                         </div>
                     </div>
                     <div class="form-group row">
-                         <label for="module_name" class="col-sm-2 col-form-label">Modulname</label>
+                         <label for="module_title" class="col-sm-2 col-form-label">Titel</label>
                          <div class="col-sm-10">
-                            <input type="text" class="form-control" name="module_name" placeholder="Modulname" required placeholder="Modulname" value="{{ $course->module->name }}">
+                            <input type="text" class="form-control" name="module_title" placeholder="Titel" required  value="{{ $course->module->title }}">
                         </div>
                     </div>
                     <div class="form-group row">

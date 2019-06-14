@@ -2,7 +2,7 @@
     <thead>
         <tr>
             <th scope="col">Modulnummer</th>
-            <th scope="col">Name</th>
+            <th scope="col">Titel</th>
             <th scope="col">Semester</th>
             <th scope="col">
                 <!-- Button trigger courseAddModal -->
@@ -14,8 +14,8 @@
         @foreach ($courses as $course)
             <tr>
                 <td class="hidden">{{ $course->id }}</td>
-                <td>{{ $course->module->module_nr }}</td>
-                <td>{{ $course->module->name }}</td>
+                <td>{{ $course->module->number }}</td>
+                <td>{{ $course->module->title }}</td>
                 <td>{{ $course->semester }}</td>
                 <td>
                     <div class="btn-group" role="group" aria-label="Course Actions">

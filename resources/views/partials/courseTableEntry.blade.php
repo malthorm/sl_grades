@@ -1,8 +1,8 @@
 @if ($course)
     <tr>
         <td class="hidden">{{ $course->id }}</td>
-        <td>{{ $course->module->module_nr }}</td>
-        <td>{{ $course->module->name }}</td>
+        <td>{{ $course->module->number }}</td>
+        <td>{{ $course->module->title }}</td>
         <td>{{ $course->semester }}</td>
         <td>
             <div class="btn-group" role="group" aria-label="Course Actions">

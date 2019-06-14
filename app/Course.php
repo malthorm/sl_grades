@@ -9,28 +9,30 @@ class Course extends Model
     protected $guarded = [];
 
     /**
-     * Get the enrollments of the course.
+     * Get the gradings of the course.
      */
-    public function enrolled()
+    public function gradings()
     {
-        return $this->hasMany(Enrollment::class);
+        return $this->hasMany(Grading::class);
     }
 
     /**
-     * Get the module of the semester course.
+     * Get the module on which the course is based.
      */
     public function module()
     {
         return $this->belongsTo(Module::class);
     }
 
-    //TODO: better verb than enroll?
+
     // @return Boolean
-    public function isGraded(Student $student)
+    public function isGraded(String $uni_identifier)
     {
         // a student can't be graded twice
-        foreach ($this->enrolled as $currentStudent) {
-            if ($currentStudent->student_id === $student->id) {
+        foreach ($this->gradings as $grading) {
+            $match = $grading->decryptUniIdentifier(true);
+            $currentStudent = Student::find($grading->student_id);
+            if ($match === $uni_identifier) {
                 return true;
             }
         }
@@ -40,12 +42,14 @@ class Course extends Model
     public function gradeStudent(Student $student, $grade)
     {
         $student_id = $student->id;
-        return $this->enrolled()->create(compact(
+        $grade = encrypt($grade);
+        return $this->gradings()->create(compact(
             'student_id',
             'grade'
         ));
     }
 
+    // USED?
     /**
      * @param App\Module $module
      * @param string $semester

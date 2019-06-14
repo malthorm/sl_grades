@@ -8,12 +8,12 @@
         @csrf
 
         <div class="form-group">
-            <label for="module_nr">Modulnummer</label>
-            <input type="text" class="form-control" name="module_nr" required placeholder="563030">
+            <label for="module_no">Modulnummer</label>
+            <input type="text" class="form-control" name="module_no" required placeholder="563030">
 
-            <label for="name">Modulname</label>
-            <input type="text" class="form-control" name="module_name" required placeholder="Datenbanken Grundlagen">
-            {{-- bootstrap form controls anstelle von placeholder? --}}
+            <label for="module_title">Title</label>
+            <input type="text" class="form-control" name="module_title" required placeholder="Datenbanken Grundlagen">
+
             <label for="semester">Semester</label>
             <input type="text" class="form-control" name="semester" required="" placeholder="WS 18">
         </div>

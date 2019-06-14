@@ -17,8 +17,8 @@ Route::get('/', function () {
 
 Route::get('/courses/search', 'CourseController@search');
 Route::resource('courses', 'CourseController');
-Route::get('/grades', 'EnrollmentController@index');
+Route::get('/grades', 'GradingController@index');
 //my-grades just {student_id}
-Route::get('/grades/my-grades', 'EnrollmentController@show');
-Route::post('/grades/{course}', 'EnrollmentController@store');
-Route::delete('/grades/{enrollment}', 'EnrollmentController@destroy');
+Route::get('/grades/my-grades', 'GradingController@show');
+Route::post('/grades/{course}', 'GradingController@store');
+Route::delete('/grades/{grading}', 'GradingController@destroy');

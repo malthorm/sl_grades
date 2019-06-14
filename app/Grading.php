@@ -1,23 +1,37 @@
 <?php
 
-//TODO: in Grades/Gradings umbennenen? auch methoden etc
 namespace App;
 
-use \App\Traits\Encryptable;
 use Illuminate\Database\Eloquent\Model;
 
-class Enrollment extends Model
+class Grading extends Model
 {
-    protected $guarded = [];
-    protected $encryptable = [
-        'student_id',
-        'course_id',
-        'grade'
-    ];
+    // use \App\Traits\Encryptable;
 
+    protected $guarded = [];
+    // protected $encryptable = [
+    //     'grade'
+    // ];
+
+    public function decryptUniIdentifier(bool $needsReturnValue = false)
+    {
+        $plainUniIdentifier = decrypt($this->student->uni_identifier);
+        $this->student->uni_identifier = $plainUniIdentifier;
+
+        if ($needsReturnValue) {
+            return $plainUniIdentifier;
+        }
+    }
+
+    // do grades need to be encrypted?
+    public function decryptGrade()
+    {
+        $plainGrade = decrypt($this->grade);
+        $this->grade = $plainGrade;
+    }
 
     /**
-     * Get the student enrolled in the course.
+     * Get the student to whom this grading belongs.
      */
     public function student()
     {
@@ -45,7 +59,7 @@ class Enrollment extends Model
     {
         $attempts = $this->attempts($module, $studentId);
         foreach ($attempts as $attempt) {
-            // higher enrollment id means created later(maybe should check semester instead)
+            // higher enrollment id means created later(maybe should check semester instead) //use created_at?
             if ($this->id < $attempt->id) {
                 return false;
             }
@@ -59,7 +73,7 @@ class Enrollment extends Model
         foreach ($module->courses as $course) {
             array_push($courseIds, $course->id);
         }
-        $attempts = Enrollment::whereIn('course_id', $courseIds)
+        $attempts = Grading::whereIn('course_id', $courseIds)
             ->where('student_id', $studentId)
             ->get()
         ;

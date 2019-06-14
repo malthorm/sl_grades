@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateEnrollmentsTable extends Migration
+class CreateGradingsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,11 @@ class CreateEnrollmentsTable extends Migration
      */
     public function up()
     {
-        Schema::create('enrollments', function (Blueprint $table) {
+        Schema::create('gradings', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('student_id', 10);
+            $table->unsignedInteger('student_id');
             $table->unsignedInteger('course_id');
-            $table->decimal('grade', 2, 1); // für versuche get all where student_id = this and course->module_nr gleich zählen
+            $table->text('grade'); //encrypted
             $table->timestamps();
 
             $table->foreign('student_id')->references('id')->on('students')->onDelete('cascade');
@@ -32,6 +32,6 @@ class CreateEnrollmentsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('enrollments');
+        Schema::dropIfExists('gradings');
     }
 }

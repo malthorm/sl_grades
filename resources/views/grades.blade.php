@@ -1,3 +1,4 @@
+<!-- what is this for label inputs? -->
 <form action="/courses" method="POST">
     <!-- csrf -->
     <div class="panel panel-default">

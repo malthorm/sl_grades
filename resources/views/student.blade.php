@@ -9,9 +9,8 @@
 @if (empty($student))
 <form action="/grades" method="GET">
     <div class="form-group">
-        <label for="studentId">Unikennzeichen</label>
-        <input type="text" class="form-control" name="studentId">
-        <small class="form-text text-muted">verschlüsseln?</small>
+        <label for="uni_identifier">Unikennzeichen</label>
+        <input type="text" class="form-control" name="uni_identifier">
     </div>
         <button type="submit" class="btn btn-primary">Submit</button>
 </form>
@@ -21,7 +20,7 @@
     <thead>
         <tr>
             <th scope="col">Modulnummer</th>
-            <th scope="col">Modulname</th>
+            <th scope="col">Titel</th>
             <th scope="col">Note</th>
             <th scope="col">Semester</th>
             <th scope="col">Versuche</th>
@@ -30,11 +29,12 @@
     </thead>
 
     <tbody>
-        @foreach ($student->enrolledIn as $grade)
+        @foreach ($student->grades as $grade)
         @if ($grade->islatestAttempt($grade->course->module, $student->id))
+        @php $grade->decryptGrade() @endphp
         <tr>
-            <td>{{ $grade->course->module->module_nr }}</td>
-            <td>{{ $grade->course->module->name }}</td>
+            <td>{{ $grade->course->module->number }}</td>
+            <td>{{ $grade->course->module->title }}</td>
             <td>{{ $grade->grade }}</td>
             <td>{{ $grade->course->semester }}</td>
             <td>{{ $grade->countAttempts($grade->course->module, $student->id) }}</td>

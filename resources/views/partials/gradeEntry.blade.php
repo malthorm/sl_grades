@@ -1,10 +1,10 @@
 @if ($grades)
-    @foreach ($grades as $grade)
+    @foreach ($grades as $grading)
         <tr>
-            <td hidden>{{ $grade->id }}</td>
+            <td hidden>{{ $grading->id }}</td>
             <td>{{ count($grades) + 1 - $loop->iteration }}</td>
-            <td>{{ $grade->student_id }}</td>
-            <td>{{ $grade->grade }}</td>
+            <td>{{ $grading->student->uni_identifier }}</td>
+            <td>{{ $grading->grade }}</td>
             <td>
                 <button type='submit' class='btn btn-danger btn-sm deletegradebtn'>Löschen</button>
             </td>

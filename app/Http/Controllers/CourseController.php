@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Course;
 use App\Module;
 use App\Student;
-use App\Enrollment;
+use App\Grading;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -48,8 +48,8 @@ class CourseController extends Controller
         }
 
         $query = '%' . $request->query('query') . '%';
-        $modules = Module::where('name', 'LIKE', $query)
-                    ->orWhere('module_nr', 'LIKE', $query)
+        $modules = Module::where('title', 'LIKE', $query)
+                    ->orWhere('number', 'LIKE', $query)
                     ->orderBy('updated_at', 'DESC')
                     ->orderBy('created_at', 'DESC')
                     ->get();
@@ -100,15 +100,15 @@ class CourseController extends Controller
     public function store(Request $request)
     {
         $rules = [
-            'module_nr' => 'required',
-            'module_name' => 'required',
+            'module_no' => 'required',
+            'module_title' => 'required',
             'semester' => 'required'
         ];
         $validatedRequest = $request->validate($rules);
 
         $module = Module::firstOrCreate([
-            'module_nr' => $validatedRequest['module_nr'],
-            'name' => $validatedRequest['module_name']
+            'number' => $validatedRequest['module_no'],
+            'title' => $validatedRequest['module_title']
         ]);
         $course = new Course;
         $course->module_id = $module->id;
@@ -129,8 +129,14 @@ class CourseController extends Controller
      */
     public function show(Course $course)
     {
+        // decrypt uni_identifiers and grades
+        $course->gradings->each(function ($grading) {
+            $grading->decryptUniIdentifier();
+            $grading->decryptGrade();
+        });
+
         if (request()->ajax()) {
-            $grades = $course->enrolled;
+            $grades = $course->gradings; //encrypted?
             return view('partials.gradeEntry', compact('grades'));
         }
         return view('courses.show', compact('course'));
@@ -157,8 +163,8 @@ class CourseController extends Controller
     public function update(Request $request, Course $course)
     {
         $rules = [
-            'module_nr' => 'required',
-            'module_name' => 'required',
+            'module_no' => 'required',
+            'module_title' => 'required',
             'semester' => 'required'
         ];
         $validatedRequest = $request->validate($rules);
@@ -201,12 +207,12 @@ class CourseController extends Controller
             // check if semester different and if course already exists
         } else {
             // check if new module exists already
-            $module = Module::where('module_nr', $validatedRequest['module_nr'])
-                        ->where('name', $validatedRequest['module_name'])->first();
+            $module = Module::where('number', $validatedRequest['module_no'])
+                        ->where('title', $validatedRequest['module_title'])->first();
             if (!$module) {
                 $module = Module::create([
-                    'module_nr' => $validatedRequest['module_nr'],
-                    'name' => $validatedRequest['module_name']
+                    'number' => $validatedRequest['module_no'],
+                    'title' => $validatedRequest['module_title']
                 ]);
                 $course->module_id = $module->id;
                 $course->semester = $validatedRequest['semester'];
@@ -271,10 +277,10 @@ class CourseController extends Controller
      */
     private function isModuleChanged($validatedRequest, Course $course)
     {
-        $oldModuleNr = $course->module->module_nr;
-        $oldModuleName = $course->module->name;
-        if ($oldModuleName != $validatedRequest['module_name'] ||
-            $oldModuleNr != $validatedRequest['module_nr']
+        $oldModuleNo = $course->module->number;
+        $oldModuleTitle = $course->module->title;
+        if ($oldModuleTitle != $validatedRequest['module_title'] ||
+            $oldModuleNo != $validatedRequest['module_no']
             ) {
             return true;
         }

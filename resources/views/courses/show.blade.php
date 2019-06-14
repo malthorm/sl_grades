@@ -4,17 +4,17 @@
     <div class="container">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h3>{{ $course->module->name }}: {{ $course->semester }}</h3>
+                <h3>{{ $course->module->title }}: {{ $course->semester }}</h3>
                 <form action="/grades/{{ $course->id }}" method="POST">
                     @csrf
                     <div class="form-inline">
                         <div class="form-group col-md-4">
-                            <label for="id">Unikennzeichen</label>
-                            <input type="text" class="form-control" name="id" required placeholder="Unikennzeichen">
+                            <label for="uni_identifier">Unikennzeichen</label>
+                            <input type="text" class="form-control" name="uni_identifier" required placeholder="Unikennzeichen" value="{{ old('uni_identifier') }}">
                         </div>
                         <div class="form-group col-md-4">
                             <label for="grade">Note</label>
-                            <input type="text" class="form-control" name="grade" required placeholder="1.0">
+                            <input type="text" class="form-control" name="grade" required placeholder="1.0" value="{{ old('grade') }}">
                         </div>
                         <button type="submit" class="btn btn-primary">
                                Student hinzufügen
@@ -56,13 +56,13 @@
                         </thead>
 
                         <tbody>
-                            @forelse ($course->enrolled as $enrolledStudent)
+                            @forelse ($course->gradings as $gradedStudent)
                             <tr>
                                     <th scope="row">{{ $loop->iteration }}</th>
-                                    <td>{{ $enrolledStudent->student_id }}</td>
-                                    <td>{{ $enrolledStudent->grade }}</td>
+                                    <td>{{ $gradedStudent->student->uni_identifier}}</td>
+                                    <td>{{ $gradedStudent->grade }}</td>
                                     <td>
-                                        <form action="/grades/{{ $enrolledStudent->id }}" method="POST">
+                                        <form action="/grades/{{ $gradedStudent->id }}" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger">Löschen</button>

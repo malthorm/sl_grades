@@ -15,7 +15,7 @@
           <a class="navbar-brand" href="#">Studieneleistungen</a>
         </div>
         <ul class="nav navbar-nav">
-          <li><a href="{{ action('EnrollmentController@index') }}">Studenten</a></li>
+          <li><a href="{{ action('GradingController@index') }}">Studenten</a></li>
           <li><a href="{{ action('CourseController@index') }}">Lehrer</a></li>
         </ul>
       </div>
