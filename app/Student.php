@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Student extends Model
 {
     protected $guarded = [];
-    protected $primaryKey = 'student_id';
+    protected $primaryKey = 'id';
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -15,6 +15,7 @@ class Student extends Model
     /**
      * Get the courses the student is enrolled in.
      */
+    //TODO: umbenennen in grades()???
     public function enrolledIn()
     {
         return $this->hasMany(Enrollment::class);
@@ -24,4 +25,6 @@ class Student extends Model
     {
         $this->students()->create($student);
     }
+
+    // remove all info on student-> was passiert mit den versuchen?
 }

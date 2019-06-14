@@ -13,7 +13,7 @@
 
             <label for="name">Modulname</label>
             <input type="text" class="form-control" name="module_name" required placeholder="Datenbanken Grundlagen">
-
+            {{-- bootstrap form controls anstelle von placeholder? --}}
             <label for="semester">Semester</label>
             <input type="text" class="form-control" name="semester" required="" placeholder="WS 18">
         </div>

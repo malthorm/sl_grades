@@ -12,11 +12,13 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('student');
 });
 
-Route::get('/courses', 'CoursesController@index');
-Route::get('/courses/create', 'CoursesController@create');
-Route::delete('/courses/{course}', 'CoursesController@destroy');
-Route::get('/courses/{course}', 'CoursesController@show');
-Route::post('/courses', 'CoursesController@store');
+Route::get('/courses/search', 'CourseController@search');
+Route::resource('courses', 'CourseController');
+Route::get('/grades', 'EnrollmentController@index');
+//my-grades just {student_id}
+Route::get('/grades/my-grades', 'EnrollmentController@show');
+Route::post('/grades/{course}', 'EnrollmentController@store');
+Route::delete('/grades/{enrollment}', 'EnrollmentController@destroy');

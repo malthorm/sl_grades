@@ -23,7 +23,8 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        Route::pattern('course', '[0-9]+');
+        Route::pattern('enrollment', '[0-9]+');
 
         parent::boot();
     }

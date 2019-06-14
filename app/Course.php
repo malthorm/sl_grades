@@ -13,7 +13,7 @@ class Course extends Model
      */
     public function enrolled()
     {
-        return $this->hasMany('App\Enrollment');
+        return $this->hasMany(Enrollment::class);
     }
 
     /**
@@ -21,11 +21,48 @@ class Course extends Model
      */
     public function module()
     {
-        return $this->belongsTo('App\Module');
+        return $this->belongsTo(Module::class);
     }
 
-    public function addCourse($course)
+    //TODO: better verb than enroll?
+    // @return Boolean
+    public function isGraded(Student $student)
     {
-        $this->courses()->create($course);
+        // a student can't be graded twice
+        foreach ($this->enrolled as $currentStudent) {
+            if ($currentStudent->student_id === $student->id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function gradeStudent(Student $student, $grade)
+    {
+        $student_id = $student->id;
+        return $this->enrolled()->create(compact(
+            'student_id',
+            'grade'
+        ));
+    }
+
+    /**
+     * @param App\Module $module
+     * @param string $semester
+     * @return boolean
+     */
+    public static function addCourse($module, $semester)
+    {
+        if (Course::where('module_id', '=', $module->id)
+            ->where('semester', '=', $semester)
+            ->get()->isNotEmpty()) {
+            return false;
+        } else {
+            Course::create([
+                'module_id' => $module->id,
+                'semester' => $semester
+            ]);
+            return true;
+        }
     }
 }
