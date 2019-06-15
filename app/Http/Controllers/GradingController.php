@@ -17,6 +17,12 @@ class GradingController extends Controller
      */
     public function index(Request $request)
     {
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!($this->authorize('student') || $this->authorize('mitarbeiter'))) {
+            abort(403);
+        }
         // authorization validation
         if (!$request->filled('uni_identifier')) {
             return view('student');
@@ -37,6 +43,12 @@ class GradingController extends Controller
      */
     public function store(Course $course, Request $request)
     {
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
         $attributes = $request->validate([
             'uni_identifier' => 'required|min:2',
             'grade' => 'required|regex:/^[1-5].[037]$/'
@@ -79,6 +91,12 @@ class GradingController extends Controller
 
     public function destroy(Grading $grading)
     {
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
         if (request()->ajax()) {
             Grading::destroy($grading->id);
             return response()->json([

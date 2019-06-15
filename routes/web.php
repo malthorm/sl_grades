@@ -11,6 +11,10 @@
 |
 */
 
+Route::get('/Shibboleth.sso/Login?target=https://www.tu-chemnitz.de/~malth/', function () {
+    return view('login');
+})->name('login');
+
 Route::get('/', function () {
     return view('student');
 });
