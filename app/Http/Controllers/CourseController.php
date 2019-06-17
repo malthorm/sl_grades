@@ -21,12 +21,12 @@ class CourseController extends Controller
      */
     public function index(Request $request)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         $courses = Course::orderBy('updated_at', 'DESC')
             ->orderBy('created_at', 'DESC')
             ->paginate(5);
@@ -44,12 +44,12 @@ class CourseController extends Controller
      */
     public function search(Request $request)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         if ($request->query('query') == '') {
             $courses = Course::orderBy('updated_at', 'DESC')->paginate(5);
             if ($request->ajax()) {
@@ -100,12 +100,12 @@ class CourseController extends Controller
      */
     public function create()
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         return view('courses.create');
     }
 
@@ -117,12 +117,12 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         $rules = [
             'module_no' => 'required',
             'module_title' => 'required',
@@ -142,7 +142,7 @@ class CourseController extends Controller
         if ($request->ajax()) {
             return view('partials.courseTableEntry', compact('course'));
         }
-        return redirect('/courses/' . $course->id);
+        return redirect('courses/');
     }
 
     /**
@@ -153,12 +153,12 @@ class CourseController extends Controller
      */
     public function show(Course $course)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         // decrypt uni_identifiers and grades
         $course->gradings->each(function ($grading) {
             $grading->decryptUniIdentifier();
@@ -180,12 +180,12 @@ class CourseController extends Controller
      */
     public function edit(Course $course)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         return view('courses.edit', compact('course'));
     }
 
@@ -198,12 +198,12 @@ class CourseController extends Controller
      */
     public function update(Request $request, Course $course)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         $rules = [
             'module_no' => 'required',
             'module_title' => 'required',
@@ -302,18 +302,18 @@ class CourseController extends Controller
      */
     public function destroy(Request $request, Course $course)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         $course->delete();
         if ($request->ajax()) {
             return $course;
         }
         session()->flash('delete', 'Lehrveranstaltung gelöscht.');
-        return redirect('/courses');
+        return redirect('courses');
     }
 
     /**

@@ -7,7 +7,7 @@
 
 {{-- oder mit matrikelnummer pls pw form beides verschlüsselt in db --}}
 @if (empty($student))
-<form action="/grades" method="GET">
+<form action="{{ action('GradingController@index') }}" method="GET">
     <div class="form-group">
         <label for="uni_identifier">Unikennzeichen</label>
         <input type="text" class="form-control" name="uni_identifier">

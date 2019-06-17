@@ -8,7 +8,7 @@
         </div>
         <div class="col-sm-5">
             <div class="pull-right">
-                <form action="/courses/search" method="GET" role="search" id="searchForm">
+                <form action="{{ action('CourseController@search') }}" method="GET" role="search" id="searchForm">
                     <div class="input-group">
                         <input type="text"
                             class="form-control"

@@ -4,7 +4,7 @@
     <h1>Neue Lehrveranstaltung</h1>
     <hr>
 
-    <form class="form-inline" action="/courses" method="POST">
+    <form class="form-inline" action="{{ action('CourseController@store') }}" method="POST">
         @csrf
 
         <div class="form-group">

@@ -5,7 +5,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h3>{{ $course->module->title }}: {{ $course->semester }}</h3>
-                <form action="/grades/{{ $course->id }}" method="POST">
+                <form action="{{ action('GradingController@store', [$course->id]) }}" method="POST">
                     @csrf
                     <div class="form-inline">
                         <div class="form-group col-md-4">
@@ -62,7 +62,7 @@
                                     <td>{{ $gradedStudent->student->uni_identifier}}</td>
                                     <td>{{ $gradedStudent->grade }}</td>
                                     <td>
-                                        <form action="/grades/{{ $gradedStudent->id }}" method="POST">
+                                        <form action="{{ action('GradingController@destroy', [$gradedStudent->id]) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger">Löschen</button>

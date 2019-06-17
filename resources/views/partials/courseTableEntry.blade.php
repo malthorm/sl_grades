@@ -22,20 +22,3 @@
    </tr>
 @endif
 
-           {{--}}
-            <noscript>
-                <div class="btn-group btn-group-sm" role="group" aria-label="...">
-                    <form action="/courses/{{ $course->id }}" method="POST">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
-                    </form>
-                    <a href="/courses/{{ $course->id }}">
-                        <button id="editbtn" class="btn btn-primary btn-sm">Bearbeiten</button>
-                    </a>
-            </noscript>
-                             <a href="#" class="show-modal btn btn-info btn-sm" data-id="{{ $course->id }}" data-title="{{ $course->module->name }}" data-body="{{ $course->enrolled }}">
-                    <i class="fa fa-eye"></i>
-                </a>
-                </div>
-                {{--}}

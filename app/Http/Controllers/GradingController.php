@@ -17,12 +17,12 @@ class GradingController extends Controller
      */
     public function index(Request $request)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!($this->authorize('student') || $this->authorize('mitarbeiter'))) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!($this->authorize('student') || $this->authorize('mitarbeiter'))) {
+        //     abort(403);
+        // }
         // authorization validation
         if (!$request->filled('uni_identifier')) {
             return view('student');
@@ -43,12 +43,12 @@ class GradingController extends Controller
      */
     public function store(Course $course, Request $request)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         $attributes = $request->validate([
             'uni_identifier' => 'required|min:2',
             'grade' => 'required|regex:/^[1-5].[037]$/'
@@ -63,7 +63,7 @@ class GradingController extends Controller
                 ]);
             } else {
                 session()->flash('danger', $attributes['uni_identifier'] . ' wurde bereits benotet');
-                return redirect("/courses/$course->id");
+                return redirect("courses/$course->id");
             }
         }
 
@@ -84,19 +84,19 @@ class GradingController extends Controller
             ]);
         } else {
             session()->flash('message', $attributes['uni_identifier'] . ' benotet');
-            return redirect("/courses/$course->id");
+            return redirect("courses/$course->id");
         }
     }
 
 
     public function destroy(Grading $grading)
     {
-        if (!$this->isAuthenticated()) {
-            return view('login');
-        }
-        if (!$this->authorize('mitarbeiter')) {
-            abort(403);
-        }
+        // if (!$this->isAuthenticated()) {
+        //     return view('login');
+        // }
+        // if (!$this->authorize('mitarbeiter')) {
+        //     abort(403);
+        // }
         if (request()->ajax()) {
             Grading::destroy($grading->id);
             return response()->json([
@@ -107,6 +107,6 @@ class GradingController extends Controller
         $grading->delete();
         session()->flash('message', $grading->decryptUniIdentifier(true) .  ' gelöscht');
 
-        return redirect("/courses/$grading->course_id") ;
+        return redirect("courses/$grading->course_id") ;
     }
 }
