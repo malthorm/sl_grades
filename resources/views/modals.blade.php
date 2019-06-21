@@ -119,33 +119,41 @@
                         <span aria-hidden="true">&times;</span>
                 </button>
                 <h3 class="modal-title" text-center primecolor id="gradesModalTitle"></h3>
-            <form id="addGradeForm">
-                @csrf
-                @method('POST')
-                <div class="table-responsive">
-                    <table class="table">
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <input type="text" name="uni_identifier" placeholder="Unikennzeichen" required>
-                                </td>
-                                <td>
-                                    <input type="text" name="grade" placeholder="Note" required>
-                                    <input type="hidden" id="hiddenCourseId" readonly>
-                                </td>
-                                <td>
-                                    <button type="submit" class="btn btn-primary">Speichern</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <form enctype="multipart/form-data" class="form-inline" id="csvForm" hidden>
+                    @csrf
+                    <input type="file" name="file" class="form-control" accept=".csv" required / id="file">
+                    <input type="submit" class="btn btn-primary submitCsvBtn" value="Csv importieren">
+                </form>
+                <form id="addGradeForm">
+                    @csrf
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <input type="text" name="uni_identifier" placeholder="Unikennzeichen" required>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="grade" placeholder="Note (2.0)" required>
+                                        <input type="hidden" id="hiddenCourseId" readonly>
+                                    </td>
+                                    <td>
+                                        <button type="submit" class="btn btn-primary">Speichern</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+
+                <div class="alert alert-info alert-dismissible" role="alert" id="gradeModalAlert" hidden style="margin-top: 10px; margin-bottom: 0px;">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <ul id="gradeModalAlertMsg">
+                    </ul>
                 </div>
-            </form>
-            <div class="alert alert-info" role="alert" id="gradeModalAlert" hidden>
-                <ul id="gradeModalAlertMsg">
-                </ul>
-            </div>
-            </div>
+                </div>
 
             <div class="modal-body">
                 <div class="table-reponsive">
@@ -170,4 +178,7 @@
         </div>
     </div>
 </div>
+
+
+
 

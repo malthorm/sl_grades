@@ -3,31 +3,46 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Exceptions\InvalidGradingException;
+use App\Exceptions\InvalidStudentException;
 
 class Grading extends Model
 {
-    // use \App\Traits\Encryptable;
-
     protected $guarded = [];
-    // protected $encryptable = [
-    //     'grade'
-    // ];
 
+    /*
+     * Decrypts the uni_identifier of the graded student and return it
+     * if desired.
+     *
+     * @param bool $needsReturnValue
+     * @retrun mixed (null|string)
+     */
     public function decryptUniIdentifier(bool $needsReturnValue = false)
     {
-        $plainUniIdentifier = decrypt($this->student->uni_identifier);
-        $this->student->uni_identifier = $plainUniIdentifier;
+        try {
+            $plainUniIdentifier = decrypt($this->student->uni_identifier);
+            $this->student->uni_identifier = $plainUniIdentifier;
 
-        if ($needsReturnValue) {
-            return $plainUniIdentifier;
+            if ($needsReturnValue) {
+                return $plainUniIdentifier;
+            }
+        } catch (\Exception $e) {
+            throw new InvalidStudentException($e);
         }
     }
 
-    // do grades need to be encrypted?
+    /*
+     * Decrypts the grade of the model.
+     *
+     */
     public function decryptGrade()
     {
-        $plainGrade = decrypt($this->grade);
-        $this->grade = $plainGrade;
+        try {
+            $plainGrade = decrypt($this->grade);
+            $this->grade = $plainGrade;
+        } catch (\Exception $e) {
+            throw new InvalidGradingException($e);
+        }
     }
 
     /**
@@ -49,12 +64,23 @@ class Grading extends Model
     /**
      * Count the number of times a student was graded
      * in a course based on the same module.
+     *
+     * @param App\Module $module
+     * @param int $studentId
+     * @return int
      */
     public function countAttempts($module, $studentId)
     {
         return count($this->attempts($module, $studentId));
     }
 
+    /**
+     * Checks if the gradings is the latest attempt in a module.
+     *
+     * @param App\Module $module
+     * @param int $studentId
+     * @return bool
+     */
     public function islatestAttempt($module, $studentId)
     {
         $attempts = $this->attempts($module, $studentId);
@@ -67,6 +93,13 @@ class Grading extends Model
         return true;
     }
 
+    /**
+     * Gets all attempts a student has made in a given module.
+     *
+     * @param App\Module $module
+     * @param int $studentId
+     * @return Illuminate\Support\Collection
+     */
     private function attempts($module, $studentId)
     {
         $courseIds = array();

@@ -13,7 +13,8 @@ class Controller extends BaseController
 
     public function isAuthenticated()
     {
-        return array_key_exists('REMOTE_USER', $_SERVER) ? true : false;
+        return true;
+        // return array_key_exists('REMOTE_USER', $_SERVER) ? true : false;
     }
 
     public function authenticate()
@@ -24,22 +25,26 @@ class Controller extends BaseController
 
     public function authorize(string $affiliation)
     {
-        $affiliations = $this->getShibAffiliations();
-        if (!is_array($affiliations)) {
-            return false;
-        }
-        if ($affiliation === "mitarbeiter") {
-            $affiliation = $affiliation . '@tu-chemnitz.de';
-            // if (e($_SERVER['REMOTE_USER']) === 'malth'){
-            //     return true;
-            // }
-            in_array($affiliation, $this->getShibAffiliations()) ? true : false;
-        } elseif ($affiliation === "student") {
-            $affiliation = $affiliation . '@tu-chemnitz.de';
-            in_array($affiliation, $this->getShibAffiliations()) ? true : false;
-        } else {
-            return false;
-        }
+        return true;
+        // $affiliations = $this->getShibAffiliations();
+        // if (!is_array($affiliations)) {
+        //     return false;
+        // }
+        // if ($affiliation === "mitarbeiter") {
+        //     $affiliation = $affiliation . '@tu-chemnitz.de';
+
+        //     // for testing
+        //     if (e($_SERVER['REMOTE_USER']) === 'malth') {
+        //         return true;
+        //     }
+
+        //     in_array($affiliation, $this->getShibAffiliations()) ? true : false;
+        // } elseif ($affiliation === "student") {
+        //     $affiliation = $affiliation . '@tu-chemnitz.de';
+        //     in_array($affiliation, $this->getShibAffiliations()) ? true : false;
+        // } else {
+        //     return false;
+        // }
     }
 
     private function getShibAffiliations()

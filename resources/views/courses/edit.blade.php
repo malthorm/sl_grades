@@ -8,7 +8,7 @@
                     <h3>{{ $course->module->title }}: {{ $course->semester }}</h3>
                 </div>
                 <div align="right">
-                    <form action="{{ action('CourseController@edit') }}/{{ $course->id }}" method="POST">
+                    <form action="{{ action('CourseController@edit', [$course->id]) }}" method="POST">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger">Kurs löschen</button>
@@ -22,7 +22,7 @@
             </div>
 
             <div class="panel-body">
-                <form action="/courses/{{ $course->id }}" method="POST">
+                <form action="{{ action('CourseController@update', [$course->id]) }}" method="POST">
                     @method('PATCH')
                     @csrf
                     <div class="form-group row">

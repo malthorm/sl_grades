@@ -14,8 +14,15 @@ Route::get('/Shibboleth.sso/Login?target=https://www.tu-chemnitz.de/~malth/', fu
 })->name('login');
 
 Route::get('/', function () {
+    //if (student)
     return view('student');
+    //if (mitarbeiter)
+
+    // else
+    //     return view('login');
 });
+
+Route::get('loginTest', 'CourseController@testAuth'); //test
 
 Route::get('courses/search', 'CourseController@search');
 Route::resource('courses', 'CourseController');
@@ -23,4 +30,5 @@ Route::get('grades', 'GradingController@index');
 //my-grades just {student_id}
 Route::get('grades/my-grades', 'GradingController@show');
 Route::post('grades/{course}', 'GradingController@store');
+Route::post('grades/{course}/csv', 'GradingController@csvImport');
 Route::delete('grades/{grading}', 'GradingController@destroy');

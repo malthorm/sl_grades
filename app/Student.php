@@ -3,25 +3,65 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Exception\InvalidStudentException;
 
 class Student extends Model
 {
-    // use \App\Traits\Encryptable;
-
     protected $guarded = [];
-    // protected $encryptable = [
-    //     'uni_identifier'
-    // ];
+
+    /*
+     * Looks in storage for a student with the given identifier.
+     * Creates a new student if it can't find one in storage.
+     *
+     * @param string $uniIdentifier
+     * @return \App\Student
+     */
+    public static function findOrCreate(string $uniIdentifier)
+    {
+        if ((strlen($uniIdentifier) < 3) || (strlen($uniIdentifier) > 15)) {
+            throw new \Exception('uniIdentifier too long or too short.');
+        }
+
+        $student = Student::findByUniIdentifier($uniIdentifier);
+        if (!$student) {
+            $id = encrypt($uniIdentifier);
+            return Student::create([
+                'uni_identifier' => $id
+            ]);
+        }
+        return $student;
+    }
+
+    /*
+     * Decrypts the models uni_identifier.
+     */
+    public function getPlainUniIdentifier()
+    {
+        try {
+            return decrypt($this->uni_identifier);
+        } catch (\Exception $e) {
+            throw new InvalidStudentException($e);
+        }
+    }
 
 
+    /*
+     * Looks in storage for a student with the given uni_identifier.
+     *
+     * @param string $uniIdentifier
+     * @return \App\Student
+     */
     public static function findByUniIdentifier(string $uniIdentifier)
     {
-        return Student::all()->filter(function ($record) use ($uniIdentifier) {
-            $field = $record->uni_identifier;
-            if (decrypt($field) === $uniIdentifier) {
-                return $record;
-            }
-        })->first();
+        try {
+            return Student::all()->filter(function ($record) use ($uniIdentifier) {
+                if ($record->getPlainUniIdentifier() === $uniIdentifier) {
+                    return $record;
+                }
+            })->first();
+        } catch (\Exception $e) {
+            throw new InvalidStudentException('Invalid Student Record: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -31,6 +71,4 @@ class Student extends Model
     {
         return $this->hasMany(Grading::class);
     }
-
-    // remove all info on student-> was passiert mit den versuchen?
 }

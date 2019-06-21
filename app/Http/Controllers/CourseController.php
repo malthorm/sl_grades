@@ -4,14 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Course;
 use App\Module;
-use App\Student;
 use App\Grading;
+use App\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
+use App\Exception\InvalidGradingException;
+use App\Exceptions\InvalidStudentException;
+use App\Exceptions\CourseHandlingException;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class CourseController extends Controller
 {
+    protected $validationRules = [
+                'module_no' => 'required',
+                'module_title' => 'required',
+                'semester' => 'required'
+            ];
 
     /**
      * Display a listing of the courses.
@@ -21,19 +29,26 @@ class CourseController extends Controller
      */
     public function index(Request $request)
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
-        $courses = Course::orderBy('updated_at', 'DESC')
-            ->orderBy('created_at', 'DESC')
-            ->paginate(5);
-        if ($request->ajax()) {
-            return view('partials.courseTable', compact('courses'));
+        if (!$this->isAuthenticated()) {
+            return view('login');
         }
-        return view('teacher', compact('courses'));
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
+        try {
+            $courses = Course::orderBy('updated_at', 'DESC')
+                ->orderBy('created_at', 'DESC')
+                ->paginate(5);
+            if ($request->ajax()) {
+                return view('partials.courseTable', compact('courses'));
+            }
+            return view('courses.index', compact('courses'));
+        } catch (CourseHandlingException $e) {
+            report($e);
+            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurse konnten '.
+            'nicht gefetched werden';
+            return back()->withError($msg);
+        }
     }
 
     /**
@@ -44,53 +59,76 @@ class CourseController extends Controller
      */
     public function search(Request $request)
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
-        if ($request->query('query') == '') {
-            $courses = Course::orderBy('updated_at', 'DESC')->paginate(5);
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
+        try {
+            if ($request->query('query') == '') {
+                $courses = Course::orderBy('updated_at', 'DESC')->paginate(5);
+                if ($request->ajax()) {
+                    return view('partials.courseTable', compact('courses'));
+                } else {
+                    return view('courses.index', compact('courses'));
+                }
+            }
+
+            $query = '%' . $request->query('query') . '%';
+            $modules = Module::where('title', 'LIKE', $query)
+                        ->orWhere('number', 'LIKE', $query)
+                        ->orderBy('updated_at', 'DESC')
+                        ->orderBy('created_at', 'DESC')
+                        ->get();
+
+            $courses = Course::where('semester', 'LIKE', $query)
+                ->orderBy('updated_at', 'DESC')
+                ->orderBy('created_at', 'DESC')
+                ->get();
+
+            foreach ($modules as $module) {
+                $courses = $courses->union($module->courses);
+            }
+
+            // paginator
+            $paginate = 5;
+            $page = Input::get('page', 1);
+            $offset = ($page * $paginate) - $paginate;
+            $options = [
+                'path' => $request->url(),
+                'query' => $request->query()
+            ];
+            $courses = $courses->all();
+            $itemsForCurrentPage = array_slice(
+                $courses,
+                $offset,
+                $paginate,
+                true
+            );
+            $courses = new LengthAwarePaginator(
+                $itemsForCurrentPage,
+                count($courses),
+                $paginate,
+                $page,
+                $options
+            );
+
             if ($request->ajax()) {
                 return view('partials.courseTable', compact('courses'));
-            } else {
-                return view('teacher', compact('courses'));
             }
+            return view('courses.index', compact('courses'));
+        } catch (CourseHandlingException $e) {
+            report($e);
+            $msg = 'Bei der Suche ist ein unerwarteter Fehler aufgetreten';
+            if ($request->ajax()) {
+                return response()->json([
+                    'msg' => $msg,
+                    'exception' => true
+                ]);
+            }
+            return back()->withError($msg)->withInput();
         }
-
-        $query = '%' . $request->query('query') . '%';
-        $modules = Module::where('title', 'LIKE', $query)
-                    ->orWhere('number', 'LIKE', $query)
-                    ->orderBy('updated_at', 'DESC')
-                    ->orderBy('created_at', 'DESC')
-                    ->get();
-
-        $courses = Course::where('semester', 'LIKE', $query)
-            ->orderBy('updated_at', 'DESC')
-            ->orderBy('created_at', 'DESC')
-            ->get();
-
-        foreach ($modules as $module) {
-            $courses = $courses->union($module->courses);
-        }
-
-        // paginator
-        $paginate = 5;
-        $page = Input::get('page', 1);
-        $offset = ($page * $paginate) - $paginate;
-        $options = [
-            'path' => $request->url(),
-            'query' => $request->query()
-        ];
-        $courses = $courses->all();
-        $itemsForCurrentPage = array_slice($courses, $offset, $paginate, true);
-        $courses = new LengthAwarePaginator($itemsForCurrentPage, count($courses), $paginate, $page, $options);
-
-        if ($request->ajax()) {
-            return view('partials.courseTable', compact('courses'));
-        }
-        return view('teacher', compact('courses'));
     }
 
     /**
@@ -100,12 +138,12 @@ class CourseController extends Controller
      */
     public function create()
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
         return view('courses.create');
     }
 
@@ -117,32 +155,40 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
-        $rules = [
-            'module_no' => 'required',
-            'module_title' => 'required',
-            'semester' => 'required'
-        ];
-        $validatedRequest = $request->validate($rules);
-
-        $module = Module::firstOrCreate([
-            'number' => $validatedRequest['module_no'],
-            'title' => $validatedRequest['module_title']
-        ]);
-        $course = new Course;
-        $course->module_id = $module->id;
-        $course->semester = $validatedRequest['semester'];
-        $course->save();
-
-        if ($request->ajax()) {
-            return view('partials.courseTableEntry', compact('course'));
+        if (!$this->isAuthenticated()) {
+            return view('login');
         }
-        return redirect('courses/');
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
+        try {
+            $validatedRequest = $request->validate($this->validationRules);
+
+            $module = Module::firstOrCreate([
+                'number' => $validatedRequest['module_no'],
+                'title' => $validatedRequest['module_title']
+            ]);
+            $course = new Course;
+            $course->module_id = $module->id;
+            $course->semester = $validatedRequest['semester'];
+            $course->save();
+
+            if ($request->ajax()) {
+                return view('partials.courseTableEntry', compact('course'));
+            }
+            return redirect('courses/');
+        } catch (CourseHandlingException $e) {
+            report($e);
+            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurs konnte' .
+            ' nicht gespeichert werden.';
+            if ($request->ajax()) {
+                return response()->json([
+                    'msg' => $msg,
+                    'exception' => true
+                ]);
+            }
+            return back()->withError($msg)->withInput();
+        }
     }
 
     /**
@@ -153,20 +199,44 @@ class CourseController extends Controller
      */
     public function show(Course $course)
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
         // decrypt uni_identifiers and grades
-        $course->gradings->each(function ($grading) {
-            $grading->decryptUniIdentifier();
-            $grading->decryptGrade();
-        });
+        try {
+            $course->gradings->each(function ($grading) {
+                $grading->decryptUniIdentifier();
+                $grading->decryptGrade();
+            });
+        } catch (InvalidGradingException $e) {
+            report($e);
+            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Note konnten' .
+            ' nicht entschlüsselt werden.';
+            if ($request->ajax()) {
+                return response()->json([
+                    'msg' => $msg,
+                    'exception' => true
+                ]);
+            }
+            return back()->withError($msg)->withInput();
+        } catch (InvalidStudentException $e) {
+            report($e);
+            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Student' .
+            ' nicht entschlüsselt werden.';
+            if ($request->ajax()) {
+                return response()->json([
+                    'msg' => $msg,
+                    'exception' => true
+                ]);
+            }
+            return back()->withError($msg)->withInput();
+        }
 
         if (request()->ajax()) {
-            $grades = $course->gradings; //encrypted?
+            $grades = $course->gradings;
             return view('partials.gradeEntry', compact('grades'));
         }
         return view('courses.show', compact('course'));
@@ -180,17 +250,18 @@ class CourseController extends Controller
      */
     public function edit(Course $course)
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
         return view('courses.edit', compact('course'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified course in storage, if an indentical course
+     * doesn't already exist in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Course  $course
@@ -198,103 +269,95 @@ class CourseController extends Controller
      */
     public function update(Request $request, Course $course)
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
-        $rules = [
-            'module_no' => 'required',
-            'module_title' => 'required',
-            'semester' => 'required'
-        ];
-        $validatedRequest = $request->validate($rules);
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
 
-        // refactor?
-        if (!$this->isModuleChanged($validatedRequest, $course)) {
-            if ($course->semester === $validatedRequest['semester']) {
-                if ($request->ajax()) {
-                    return response()->json([
-                        'error' => 'Daten unverändert'
-                    ]);
+        try {
+            $validatedRequest = $request->validate($this->validationRules);
+            $currentModule = $course->module;
+            $newModule = Module::
+                        where('number', $validatedRequest['module_no'])
+                        ->where('title', $validatedRequest['module_title'])
+                        ->first();
+            $newSemester = $validatedRequest['semester'];
+
+            if (($currentModule == $newModule) &&
+                    ($course->semester === $newSemester)) {
+                return $this->courseUpdatedResponse($request, $course, 'Daten'.
+                    ' unverändert', true);
+            } elseif (($currentModule == $newModule) &&
+                    ($course->semester !== $newSemester)) {
+                // check if the  course already exists for the new semester
+                if ($course->duplicate($currentModule->id, $newSemester)) {
+                    return $this->courseUpdatedResponse(
+                        $request,
+                        $course,
+                        'Der Kurs existiert bereits für das Semester.',
+                        true
+                    );
                 } else {
-                    session()->flash('error', 'Daten unverändert');
-                    return redirect("courses/{$course->id}/edit");
-                }
-            } else {
-                // check if the new course already exists
-                $newCourse = Course::where('module_id', $course->module_id)
-                            ->where('semester', $validatedRequest['semester'])->first();
-                if ($newCourse) {
-                    if ($request->ajax()) {
-                        return response()->json([
-                            'error' => 'Kurs für das angegebene Semester existiert bereits.'
-                        ]);
-                    } else {
-                        session()->flash('error', 'Der Kurs existiert bereits.');
-                        return redirect("courses/{$course->id}/edit");
-                    }
-                } else {
-                    $course->semester = $validatedRequest['semester'];
+                    $course->semester = $newSemester;
                     $course->save();
-                    if ($request->ajax()) {
-                        return view('partials.courseTableEntry', compact('course'));
-                    } else {
-                        session()->flash('change', 'Semester geändert');
-                        return redirect("courses/{$course->id}");
-                    }
-                }
-            }
-            // check if semester different and if course already exists
-        } else {
-            // check if new module exists already
-            $module = Module::where('number', $validatedRequest['module_no'])
-                        ->where('title', $validatedRequest['module_title'])->first();
-            if (!$module) {
-                $module = Module::create([
-                    'number' => $validatedRequest['module_no'],
-                    'title' => $validatedRequest['module_title']
-                ]);
-                $course->module_id = $module->id;
-                $course->semester = $validatedRequest['semester'];
-                $course->load('module')->save();
-                if ($request->ajax()) {
-                    return view('partials.courseTableEntry', compact('course'));
-                } else {
-                    session()->flash('change', 'Änderung erfolgreich');
-                    return redirect("courses/{$course->id}");
+                    return $this->courseUpdatedResponse(
+                        $request,
+                        $course,
+                        'Semester geändert'
+                    );
                 }
             } else {
-                // check if a course based on the new module already exists for the given semester
-                $newCourse = Course::where('module_id', $module->id)
-                                ->where('semester', $validatedRequest['semester'])->first();
-                if ($newCourse) {
-                    if ($request->ajax()) {
-                        return response()->json([
-                            'error' => 'Kurs für das angegebene Semester existiert bereits.'
+                // check if new module exists already
+                if (!$newModule) {
+                    // create a new Module and update the course
+                    $newModule = Module::create([
+                            'number' => $validatedRequest['module_no'],
+                            'title' => $validatedRequest['module_title']
                         ]);
-                    } else {
-                        session()->flash('error', 'Der Kurs existiert bereits.');
-                        return redirect("courses/{$course->id}/edit");
-                    }
+                    $course->updateAttributes($newModule, $newSemester);
+                    return $this->courseUpdatedResponse(
+                        $request,
+                        $course,
+                        'Änderung gespeichert.'
+                    );
                 } else {
-                    $course->module_id = $module->id;
-                    $course->semester = $validatedRequest['semester'];
-                    $course->load('module')->save();
-                    if ($request->ajax()) {
-                        return view('partials.courseTableEntry', compact('course'));
+                    // newModule exists already, so check if a course for that
+                    // semester exists as well
+                    if ($course->duplicate($newModule->id, $newSemester)) {
+                        return $this->courseUpdatedResponse(
+                            $request,
+                            $course,
+                            'Der Kurs existiert bereits.',
+                            true
+                        );
                     } else {
-                        session()->flash('change', 'Änderung erfolgreich');
-                        return redirect("courses/{$course->id}");
+                        $course->updateAttributes($newModule, $newSemester);
+                        return $this->courseUpdatedResponse(
+                            $request,
+                            $course,
+                            'Änderung gespeichert.'
+                        );
                     }
                 }
             }
+        } catch (CourseHandlingException $e) {
+            report($e);
+            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurs konnte' .
+            ' nicht updated werden.';
+            if ($request->ajax()) {
+                return response()->json([
+                    'msg' => $msg,
+                    'exception' => true
+                ]);
+            }
+            return back()->withError($msg)->withInput();
         }
     }
 
     /**
-     * Remove the specified grading from storage.
+     * Remove the specified course from storage.
      *
      * @param  \Illuminate\Http\Request $request
      * @param  \App\Course  $course
@@ -302,13 +365,28 @@ class CourseController extends Controller
      */
     public function destroy(Request $request, Course $course)
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
-        $course->delete();
+        if (!$this->isAuthenticated()) {
+            return view('login');
+        }
+        if (!$this->authorize('mitarbeiter')) {
+            abort(403);
+        }
+        try {
+            $course->delete();
+        } catch (CourseHandlingException $e) {
+            report($e);
+            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurs konnte' .
+            ' nicht gelöscht werden.';
+            if ($request->ajax()) {
+                return response()->json([
+                    'msg' => $msg,
+                    'exception' => true
+                ]);
+            }
+            return back()->withError($msg);
+        }
+        $this->maintenance($course->module);
+
         if ($request->ajax()) {
             return $course;
         }
@@ -316,22 +394,71 @@ class CourseController extends Controller
         return redirect('courses');
     }
 
-    /**
-     * Check if the module in the validatedRequest matches the module in $course.
-     *
-     * @param  Array $validatedRequest
-     * @param  \App\Course  $course
-     * @return Boolean
-     */
-    private function isModuleChanged($validatedRequest, Course $course)
+    // only for testing
+    public function testAuth($student = true)
     {
-        $oldModuleNo = $course->module->number;
-        $oldModuleTitle = $course->module->title;
-        if ($oldModuleTitle != $validatedRequest['module_title'] ||
-            $oldModuleNo != $validatedRequest['module_no']
-            ) {
-            return true;
+        // session() ?
+        if ($student) {
+            $_['REMOTE_USER'] = 'student';
+            $_['HTTP_SHIB_EP_AFFILIATION'] = 'student@tu-chemnitz.de';
+            return redirect('grades');
+        } else {
+            $_['REMOTE_USER'] = 'staff';
+            $_['HTTP_SHIB_EP_AFFILIATION'] = 'mitarbeiter@tu-chemnitz.de';
+            return redirect('courses');
         }
-        return false;
+    }
+
+    /**
+     * Don't keep modules in storage if there aren't any courses based on them.
+     *
+     * @param \App\Module $module
+     */
+    private function maintenance(Module $module)
+    {
+        if ($module->courses->isEmpty()) {
+            $module->delete();
+        }
+    }
+
+    /**
+     * Generates a response for the different scenarios in the update method.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Course $course
+     * @param string $msg
+     * @param bool $error
+     * @return \Illuminate\Http\Response
+     */
+    private function courseUpdatedResponse(
+        Request $request,
+        Course $course,
+        string $msg,
+        bool $error = false
+    ) {
+        if ($error) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'errors' => $msg,
+                    'error' => true
+                ]);
+            } else {
+                session()->flash(
+                    'error',
+                    $msg
+                );
+                return redirect("courses/{$course->id}/edit");
+            }
+        }
+
+        if ($request->ajax()) {
+            return view(
+                'partials.courseTableEntry',
+                compact('course')
+            );
+        } else {
+            session()->flash('change', $msg);
+            return redirect("courses/{$course->id}");
+        }
     }
 }

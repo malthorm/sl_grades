@@ -2,15 +2,22 @@
     <tr>
         <td class="hidden">{{ $course->id }}</td>
         <td>{{ $course->module->number }}</td>
-        <td>{{ $course->module->title }}</td>
+        <td>
+            <a href="{{action('CourseController@show', [$course->id]) }}">
+                {{ $course->module->title }}
+            </a>
+        </td>
         <td>{{ $course->semester }}</td>
         <td>
-            <div class="btn-group" role="group" aria-label="Course Actions">
-                <a href="#" class="btn btn-success btn-sm gradesbtn">Noten eintragen</a>
-                <a href="#" class="btn btn-primary btn-sm editbtn">Bearbeiten</a>
-                <a href="#" class="btn btn-danger btn-sm deletebtn">Löschen</a>
+            <div class="dropdown" aria-label="Course Actions">
+                <button class="btn btn-primary dropbtn">Aktion</button>
+                <div role="menu" class="dropdown-content">
+                    <a href="#" class="gradesbtn">Noten eintragen</a>
+                    <a href="#" class="csvbtn">Importiere CSV</a>
+                    <a href="#" class="editbtn">Kurs bearbeiten</a>
+                    <a href="#" class="deletebtn">Kurs löschen</a>
+                </div>
             </div>
-
         </td>
     </tr>
 
