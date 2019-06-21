@@ -1,6 +1,8 @@
 @extends('layout')
 
 @section('content')
+
+
     <a href="/Shibboleth.sso/Login?target=https://www.tu-chemnitz.de/~malth/">Login</a>
 
     <div>

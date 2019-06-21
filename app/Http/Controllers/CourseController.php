@@ -6,11 +6,12 @@ use App\Course;
 use App\Module;
 use App\Grading;
 use App\Student;
+use App\ShibbAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use App\Exception\InvalidGradingException;
-use App\Exceptions\InvalidStudentException;
 use App\Exceptions\CourseHandlingException;
+use App\Exceptions\InvalidStudentException;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class CourseController extends Controller
@@ -29,16 +30,16 @@ class CourseController extends Controller
      */
     public function index(Request $request)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
         try {
             $courses = Course::orderBy('updated_at', 'DESC')
                 ->orderBy('created_at', 'DESC')
-                ->paginate(5);
+                ->paginate(7);
             if ($request->ajax()) {
                 return view('partials.courseTable', compact('courses'));
             }
@@ -59,22 +60,21 @@ class CourseController extends Controller
      */
     public function search(Request $request)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
         try {
             if ($request->query('query') == '') {
-                $courses = Course::orderBy('updated_at', 'DESC')->paginate(5);
+                $courses = Course::orderBy('updated_at', 'DESC')->paginate(7);
                 if ($request->ajax()) {
                     return view('partials.courseTable', compact('courses'));
                 } else {
                     return view('courses.index', compact('courses'));
                 }
             }
-
             $query = '%' . $request->query('query') . '%';
             $modules = Module::where('title', 'LIKE', $query)
                         ->orWhere('number', 'LIKE', $query)
@@ -92,7 +92,7 @@ class CourseController extends Controller
             }
 
             // paginator
-            $paginate = 5;
+            $paginate = 7;
             $page = Input::get('page', 1);
             $offset = ($page * $paginate) - $paginate;
             $options = [
@@ -138,10 +138,10 @@ class CourseController extends Controller
      */
     public function create()
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
         return view('courses.create');
@@ -155,10 +155,10 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
         try {
@@ -199,10 +199,10 @@ class CourseController extends Controller
      */
     public function show(Course $course)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
         // decrypt uni_identifiers and grades
@@ -250,10 +250,10 @@ class CourseController extends Controller
      */
     public function edit(Course $course)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
         return view('courses.edit', compact('course'));
@@ -269,10 +269,10 @@ class CourseController extends Controller
      */
     public function update(Request $request, Course $course)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
 
@@ -365,10 +365,10 @@ class CourseController extends Controller
      */
     public function destroy(Request $request, Course $course)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
         try {
@@ -394,20 +394,6 @@ class CourseController extends Controller
         return redirect('courses');
     }
 
-    // only for testing
-    public function testAuth($student = true)
-    {
-        // session() ?
-        if ($student) {
-            $_['REMOTE_USER'] = 'student';
-            $_['HTTP_SHIB_EP_AFFILIATION'] = 'student@tu-chemnitz.de';
-            return redirect('grades');
-        } else {
-            $_['REMOTE_USER'] = 'staff';
-            $_['HTTP_SHIB_EP_AFFILIATION'] = 'mitarbeiter@tu-chemnitz.de';
-            return redirect('courses');
-        }
-    }
 
     /**
      * Don't keep modules in storage if there aren't any courses based on them.

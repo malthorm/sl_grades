@@ -1,19 +1,24 @@
 @extends('layout')
 
 @section('content')
-    <div class="container">
+         <div class="btn-group btn-group-justified">
+              <div class="btn-group">
+
+                  <form action="{{ action('CourseController@destroy', [$course->id]) }}" method="POST">
+                      @csrf
+                      @method('DELETE')
+              <button type="submit" class="btn btn-primary">Kurs löschen
+              </button>
+                  </form>
+              </div>
+              <a href="{{ action('CourseController@show', [$course->id]) }}" class="btn btn-primary">Zurück</a>
+        </div>
         <div class="panel panel-default">
             <div class="panel-heading">
-                <div align="left">
+                <div>
                     <h3>{{ $course->module->title }}: {{ $course->semester }}</h3>
                 </div>
-                <div align="right">
-                    <form action="{{ action('CourseController@edit', [$course->id]) }}" method="POST">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger">Kurs löschen</button>
-                    </form>
-                </div>
+
                 @if (session('error'))
                     <div class="alert alert-danger" role="alert" style="margin-top: 10px">
                         <strong>{{ session('error') }}</strong>
@@ -49,5 +54,4 @@
                 </form>
             </div>
         </div>
-    </div>
 @endsection

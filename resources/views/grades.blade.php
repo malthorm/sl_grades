@@ -1,5 +1,4 @@
-<!-- what is this for label inputs? -->
-<form action="/courses" method="POST">
+<form action="courses" method="POST">
     <!-- csrf -->
     <div class="panel panel-default">
         <div class="panel-heading">Neue Studenten eintragen</div>

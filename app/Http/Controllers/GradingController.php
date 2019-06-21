@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Course;
 use App\Grading;
 use App\Student;
+use App\ShibbAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Exceptions\GradeHandlingException;
@@ -20,20 +21,23 @@ class GradingController extends Controller
      */
     public function index(Request $request)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!($this->authorize('student') || $this->authorize('mitarbeiter'))) {
+        // should only authorize students if not debugging?
+        if (!(ShibbAuth::authorize('student') || $this->authorize('mitarbeiter'))) {
             abort(403);
         }
-        // authorization validation
         try {
-            if (!$request->filled('uni_identifier')) {
-                return view('student');
-            }
-            $student = Student::findByUniIdentifier(
-                $request->input('uni_identifier')
-            );
+            // for testing
+            // if (!$request->filled('uni_identifier')) {
+            //     return view('student');
+            // }
+            // $student = Student::findByUniIdentifier(
+            //     $request->input('uni_identifier')
+            // );
+            $user = $_SERVER['REMOTE_USER'];
+            $student = Student::findByUniIdentifier($user);
             abort_unless($student, 404);
             return view('student', compact('student'));
         } catch (GradeHandlingException $e) {
@@ -53,12 +57,12 @@ class GradingController extends Controller
      */
     public function store(Course $course, Request $request)
     {
-        // if (!$this->isAuthenticated()) {
-        //     return view('login');
-        // }
-        // if (!$this->authorize('mitarbeiter')) {
-        //     abort(403);
-        // }
+        if (!ShibbAuth::isAuthenticated()) {
+            return view('login');
+        }
+        if (!ShibbAuth::authorize('mitarbeiter')) {
+            abort(403);
+        }
         $attributes = $request->validate([
             'uni_identifier' => 'required|min:2',
             'grade' => 'required|regex:/^[1-5][.,][037]$/'
@@ -116,10 +120,10 @@ class GradingController extends Controller
      */
     public function destroy(Grading $grading)
     {
-        if (!$this->isAuthenticated()) {
+        if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!$this->authorize('mitarbeiter')) {
+        if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
         try {
@@ -175,6 +179,12 @@ class GradingController extends Controller
      */
     public function csvImport(Request $request, Course $course)
     {
+        if (!ShibbAuth::isAuthenticated()) {
+            return view('login');
+        }
+        if (!ShibbAuth::authorize('mitarbeiter')) {
+            abort(403);
+        }
         $validator = Validator::make($request->all(), [
             'file' => 'required'
         ]);
