@@ -189,7 +189,6 @@
     <div id="tucal-breadcrumbrow" class="row">
       <div class="col-xs-12">
         <ol class="tucal-breadcrumb"><li><a href="//www.tu-chemnitz.de/" title="Homepage">TU Chemnitz</a></li><li><a href="https://www.tu-chemnitz.de/informatik/">Fakultät für Informatik</a></li><li><a href="https://www.tu-chemnitz.de/informatik/DVS/">Professur Datenverwaltungssysteme</a></li>
-          <li><a href="https://www-user.tu-chemnitz.de/~malth/">Studienleistungen</a></li>
       </div>
     </div>
   </div>
@@ -242,10 +241,10 @@
     <div class="container">
       <div class="row">
         <div class="col-sm-6 col-md-9 col-xs-12 column-right">
-          <div class="tucal-footmenuitems"><a href="https://wfm.hrz.tu-chemnitz.de/wfm/?action=webedit;wdir=/home/urz/m/malth/public_html;file=test.html" rel="nofollow" title="Angemeldet als Malte Thormählen" accesskey="e">F&uuml;r&nbsp;Autoren</a></div>
-          <div class="tucal-footmenuitems"><a href="//www.tu-chemnitz.de/transfer/fundraising/mediadaten.php">Mediadaten</a></div>
-          <div class="tucal-footmenuitems"><a href="//www.tu-chemnitz.de/tu/impressum.html">Impressum</a></div>
-          <div class="tucal-footmenuitems"><a href="//www.tu-chemnitz.de/tu/datenschutz.html">Datenschutz</a></div>
+          <div class="tucal-footmenuitems"><a href="#">Autoren</a></div>
+          <div class="tucal-footmenuitems"><a href="#">Mediadaten</a></div>
+          <div class="tucal-footmenuitems"><a href="#">Impressum</a></div>
+          <div class="tucal-footmenuitems"><a href="#">Datenschutz</a></div>
         </div>
         <div class="col-sm-6 col-md-3 col-xs-12 column-left">
           <div>

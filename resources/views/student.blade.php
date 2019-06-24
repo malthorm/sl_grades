@@ -27,7 +27,14 @@
             </thead>
 
             <tbody>
-                @forelse ($student->grades as $grade)
+            @if (empty($student))
+                <tr>
+                    <td align="center" colspan="5">
+                        <h4><strong>Es wurden keine Noten gefunden.</strong></h4>
+                    </td>
+                </tr>
+            @else
+                @foreach ($student->grades as $grade)
                     @if ($grade->islatestAttempt($grade->course->module, $student->id))
                     @php $grade->decryptGrade() @endphp
                     <tr>
@@ -45,13 +52,8 @@
                         </td>
                     </tr>
                     @endif
-                @empty
-                   <tr>
-                        <td align="center" colspan="5">
-                            <h4><strong>Es wurden noch keine Noten gefunden.</strong></h4>
-                        </td>
-                    </tr>
-                @endforelse
+                @endforeach
+            @endif
             </tbody>
         </table>
     </div>

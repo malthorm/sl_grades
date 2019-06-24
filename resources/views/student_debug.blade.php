@@ -1,4 +1,4 @@
-@extends ('layout_local')
+@extends ('layout')
 
 @section ('content')
     <h1>Meine Studienleistungen</h1>

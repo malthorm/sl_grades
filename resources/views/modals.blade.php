@@ -7,6 +7,9 @@
                         <span aria-hidden="true">&times;</span>
                 </button>
                 <h3 class="modal-title" text-center primecolor id="courseTitleModal">Neue Lehrveranstaltung</h3>
+                <div class="alert alert-info" id="addModalAlert" hidden>
+                    <p><strong id="addModalAlertMsg"></strong></p>
+                </div>
             </div>
 
             <form id="courseAddForm">

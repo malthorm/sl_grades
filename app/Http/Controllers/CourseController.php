@@ -169,8 +169,24 @@ class CourseController extends Controller
                 'title' => $validatedRequest['module_title']
             ]);
             $course = new Course;
+            if ($course->duplicate(
+                $module->id,
+                $validatedRequest['semester']
+            )) {
+                $msg = 'Kurs existiert bereits.';
+                if ($request->ajax()) {
+                    return response()->json([
+                        'error' => true,
+                        'msg' => $msg
+                    ]);
+                } else {
+                    session()->flash('message', $msg);
+                    return redirect()->back()->withInput();
+                }
+            }
             $course->module_id = $module->id;
             $course->semester = $validatedRequest['semester'];
+
             $course->save();
 
             if ($request->ajax()) {
@@ -287,8 +303,12 @@ class CourseController extends Controller
 
             if (($currentModule == $newModule) &&
                     ($course->semester === $newSemester)) {
-                return $this->courseUpdatedResponse($request, $course, 'Daten'.
-                    ' unverändert', true);
+                return $this->courseUpdatedResponse(
+                    $request,
+                    $course,
+                    'Daten unverändert',
+                    true
+                );
             } elseif (($currentModule == $newModule) &&
                     ($course->semester !== $newSemester)) {
                 // check if the  course already exists for the new semester

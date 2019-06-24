@@ -129,6 +129,8 @@ $(document).ready(function (){
         $('#module_title-error').html('');
         $('#semester-error').html('');
         $('#courseAddModal input.form-control').val('');
+        $('#addModalAlert').hide();
+        $('#addModalAlertMsg').empty();
     });
     $('#courseEditModal').on("hidden.bs.modal", function(){
         $('#editModal_module_no-error').html('');
@@ -255,44 +257,6 @@ function ajaxDeleteCourse(courseId)
     });
 }
 
-function ajaxUpdateCourse(courseId)
-{
-    $.ajax({
-        type: 'PATCH',
-        url: 'courses/' + courseId,
-        data: $('#courseEditForm').serialize(),
-        success: function(response){
-            if (response.exception) {
-                $('#courseEditFormErrors').text(response.msg);
-                $('#courseEditFormErrors').show();
-            } else if (response.error) {
-                $('#courseEditFormErrors').text(response.error);
-                $('#courseEditFormErrors').show();
-            } else {
-                $('#courseEditFormErrors').hide();
-                // find and remove old course <tr> in courseTable
-                $('#courseTable .hidden').filter(function(){
-                    return $(this).text() === course;
-                }).closest('tr').remove();
-                $('#courseTable tbody').prepend(response);
-                $('#courseEditModal').modal('hide');
-                $('#ajaxAlertMsg').html('Änderung gespeichert.');
-                $('#ajaxAlert').show();
-            }
-        },
-        error: function (response) {
-            if (response.status === 422) {
-                let errors = response.responseJSON.errors;
-                for (error in errors) {
-                    $('#editModal_' + error + '-error').html(errors[error][0]);
-                }
-            } else {
-                $('#courseEditFormErrors').text(response.error);
-                $('#courseEditFormErrors').show();
-            }
-        }
-    });
-}
 
 /*
  * Finds and displays courses from storage.
@@ -406,8 +370,11 @@ function ajaxUpdateCourse(courseId)
         url: 'courses/' + courseId,
         data: $('#courseEditForm').serialize(),
         success: function(response){
-            if (response.error) {
-                $('#courseEditFormErrors').text(response.error);
+            if (response.exception) {
+                $('#courseEditFormErrors').text(response.msg);
+                $('#courseEditFormErrors').show();
+            } else if (response.error) {
+                $('#courseEditFormErrors').text(response.errors);
                 $('#courseEditFormErrors').show();
             } else {
                 $('#courseEditFormErrors').hide();
@@ -419,9 +386,6 @@ function ajaxUpdateCourse(courseId)
                 $('#courseEditModal').modal('hide');
                 $('#ajaxAlertMsg').html('Änderung gespeichert.');
                 $('#ajaxAlert').show();
-            }
-            if (response.exception) {
-                $('#ajaxAlert').html(response.msg);
             }
         },
         error: function (response) {
@@ -452,14 +416,21 @@ function ajaxStoreCourse()
         url: 'courses',
         data: $('#courseAddForm').serialize(),
         success: function (response) {
-            $('#courseTable tbody').prepend(response);
-            $('#courseAddModal').modal('hide');
-
-            $('#ajaxAlert').show();
-            $('#ajaxAlertMsg').html('Veranstaltung hinzugefügt.');
             if (response.exception) {
-                $('#ajaxAlert').html(response.msg);
+                $('#ajaxAlert').text(response.msg);
+                $('#ajaxAlert').show();
             }
+            if (response.error) {
+                $('#addModalAlertMsg').html(response.msg);
+                $('#addModalAlert').show();
+            } else {
+                $('#courseTable tbody').prepend(response);
+                $('#courseAddModal').modal('hide');
+
+
+                $('#ajaxAlertMsg').html('Veranstaltung hinzugefügt.');
+                $('#ajaxAlert').show();
+                }
         },
         error: function (response) {
             if (response.status === 422) {

@@ -4,7 +4,6 @@ namespace App;
 
 class ShibbAuth
 {
-    //if not env(debug)
     public static function isAuthenticated()
     {
         if (env('APP_DEBUG')) {

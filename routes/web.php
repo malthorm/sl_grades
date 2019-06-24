@@ -15,15 +15,15 @@ use \App\ShibbAuth;
 if (env('APP_ENV') == 'production') {
     Route::get('/', function () {
         if (ShibbAuth::authorize('mitarbeiter')) {
-            return redirect('index.php/courses');
+            return redirect('courses');
         }
         if (ShibbAuth::authorize('student')) {
-            return redirect('index.php/grades');
+            return redirect('grades');
         }
     });
 } else {
     Route::get('/', function () {
-        return view('student');
+        return redirect('grades');
     });
 }
 
