@@ -13,7 +13,7 @@
     <nav class="navbar navbar-default">
       <div class="container-fluid">
         <div class="navbar-header">
-          <a class="navbar-brand" href="#">Studieneleistungen</a>
+          <a class="navbar-brand" href="#">Studienleistung</a>
         </div>
         <ul class="nav navbar-nav">
           <li><a href="{{ action('GradingController@index') }}">Studenten</a></li>
@@ -42,8 +42,8 @@
   {{-- JQuery, BootstrapJS-Plugins --}}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  <script src="{{ URL::asset('js/ajax.js') }}"></script>
 
-  @yield('js')
 
 </body>
 </html>

@@ -16,7 +16,8 @@ $app = new Illuminate\Foundation\Application(
 );
     // realpath(__DIR__ . '/../')
 
-if (env('APP_ENV', 'PUBLIC_PATH') == 'public_html') {
+// for compatbility with personal uni homepage
+if (env('PUBLIC_PATH') == 'public_html') {
     $app->bind('path.public', function () {
         return base_path() . '/../public_html';
     });

@@ -7,6 +7,9 @@ class ShibbAuth
     //if not env(debug)
     public static function isAuthenticated()
     {
+        if (env('APP_DEBUG')) {
+            return true;
+        }
         return array_key_exists('REMOTE_USER', $_SERVER) ? true : false;
     }
 
@@ -18,8 +21,9 @@ class ShibbAuth
 
     public static function authorize(string $affiliation)
     {
-        // for testing
-        // return true;
+        if (env('APP_DEBUG')) {
+            return true;
+        }
 
         $affiliations = ShibbAuth::getShibAffiliations();
         if (!is_array($affiliations)) {

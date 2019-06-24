@@ -13,6 +13,20 @@
         </div>
     @endif
 
+    @if (empty($student))
+    <form action="{{ action('GradingController@index') }}" method="GET" class="form-horizontal">
+        <div class="form-group">
+            <label for="uni_identifier" class="col-xm-3 control-label">Unikennzeichen</label>
+            <input type="text" class="form-control" name="uni_identifier" placeholder="Unikennzeichen">
+        </div>
+        <div class="form-group">
+            <div class="col-xm-offset-3 col-xm-9">
+                <button type="submit" class="btn btn-primary">Absenden</button>
+            </div>
+        </div>
+    </form>
+
+    @else
     <div class="table-responsive">
         <table class="table horizontal">
             <thead>
@@ -27,7 +41,7 @@
             </thead>
 
             <tbody>
-                @forelse ($student->grades as $grade)
+                @foreach ($student->grades as $grade)
                     @if ($grade->islatestAttempt($grade->course->module, $student->id))
                     @php $grade->decryptGrade() @endphp
                     <tr>
@@ -45,15 +59,9 @@
                         </td>
                     </tr>
                     @endif
-                @empty
-                   <tr>
-                        <td align="center" colspan="5">
-                            <h4><strong>Es wurden noch keine Noten gefunden.</strong></h4>
-                        </td>
-                    </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
-    </div>
-
+   </div>
+    @endif
 @endsection

@@ -1,14 +1,5 @@
-@extends('layout')
-{{--     <form action="{{ action('GradingController@csvImport', [$course->id]) }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        <div class="from-group">
-            <label for="file">CSV-Datei</label>
-            <input type="file" name="file" class="form-control" accept=".csv">
-        </div>
-        <div class="form-group">
-            <button class="btn btn-primary" type="submit">Upload CSV</button>
-        </div>
-    </form> --}}
+@extends('layout_local')
+
 @section('content')
      <div class="btn-group btn-group-justified">
           <div class="btn-group">
@@ -48,7 +39,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-success">
                                Student hinzufügen
                         </button>
                     </div>

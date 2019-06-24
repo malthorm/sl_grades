@@ -11,17 +11,21 @@
 */
 use \App\ShibbAuth;
 
-Route::get('/', function () {
-    if (!ShibbAuth::isAuthenticated()) {
-        return view('index.php/login');
-    }
-    if (ShibbAuth::authorize('mitarbeiter')) {
-        return redirect('index.php/courses');
-    }
-    if (ShibbAuth::authorize('student')) {
-        return redirect('index.php/grades');
-    }
-});
+// can't get pretty urls to work on www-user.tu-chemnitz.de
+if (env('APP_ENV') == 'production') {
+    Route::get('/', function () {
+        if (ShibbAuth::authorize('mitarbeiter')) {
+            return redirect('index.php/courses');
+        }
+        if (ShibbAuth::authorize('student')) {
+            return redirect('index.php/grades');
+        }
+    });
+} else {
+    Route::get('/', function () {
+        return view('student');
+    });
+}
 
 
 Route::get('courses/search', 'CourseController@search');

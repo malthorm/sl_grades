@@ -29,17 +29,20 @@ class GradingController extends Controller
             abort(403);
         }
         try {
-            // for testing
-            // if (!$request->filled('uni_identifier')) {
-            //     return view('student');
-            // }
-            // $student = Student::findByUniIdentifier(
-            //     $request->input('uni_identifier')
-            // );
-            $user = $_SERVER['REMOTE_USER'];
-            $student = Student::findByUniIdentifier($user);
-            abort_unless($student, 404);
-            return view('student', compact('student'));
+            if (env('APP_ENV') == 'production') {
+                $user = $_SERVER['REMOTE_USER'];
+                $student = Student::findByUniIdentifier($user);
+                return view('student', compact('student'));
+            } else {
+                // for testing
+                if (!$request->filled('uni_identifier')) {
+                    return view('student_debug');
+                }
+                $student = Student::findByUniIdentifier(
+                    $request->input('uni_identifier')
+                );
+                return view('student_debug', compact('student'));
+            }
         } catch (GradeHandlingException $e) {
             report($e);
             return back()->withError(
@@ -123,11 +126,19 @@ class GradingController extends Controller
         if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
+        if (!(ShibbAuth::authorize('mitarbeiter') ||
+            ShibbAuth::authorize('student'))) {
             abort(403);
         }
         try {
             $uni_identifier = $grading->decryptUniIdentifier(true);
+            if (!env('APP_DEBUG')) {
+                // students are only allowed to delete there own gradings
+                if (ShibbAuth::authorize('student') &&
+                $_SERVER['REMOTE_USER'] != $uni_identifier) {
+                    abort(403);
+                }
+            }
             if (request()->ajax()) {
                 Grading::destroy($grading->id);
                 $this->maintenance($grading->student);
@@ -143,6 +154,9 @@ class GradingController extends Controller
                 'message',
                 $uni_identifier . ' gelöscht'
             );
+            if (ShibbAuth::authorize('student')) {
+                return redirect()->action('GradingController@index');
+            }
             return redirect("courses/$grading->course_id");
         } catch (GradeHandlingException $e) {
             report($e);

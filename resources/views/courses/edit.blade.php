@@ -1,4 +1,4 @@
-@extends('layout')
+@extends('layout_local')
 
 @section('content')
          <div class="btn-group btn-group-justified">
@@ -49,7 +49,7 @@
                         </div>
                     </div>
                     <div class="form-group" align="right">
-                        <button type="submit" class="btn btn-primary">Kurs bearbeiten</button>
+                        <button type="submit" class="btn btn-success">Kurs bearbeiten</button>
                     </div>
                 </form>
             </div>
