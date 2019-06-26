@@ -4,7 +4,9 @@
     <div class="row">
         <div class="col-sm-7">
             <h3>Lehrveranstaltungen</h3>
-            <a href="courses/create">Neue Lehrveranstaltung</a>
+            <noscript>
+                <a href="courses/create">Neue Lehrveranstaltung</a>
+            </noscript>
         </div>
         <div class="col-sm-5">
             <div class="pull-right">
