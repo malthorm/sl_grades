@@ -55,9 +55,6 @@ class Course extends Model
      */
     public function gradeStudent(Student $student, string $grade)
     {
-        if (!(($student instanceof Student) && (is_string($grade)))) {
-            throw new InvalidGradingException('Invalid grading data');
-        }
         $student_id = $student->id;
         $grade = encrypt($grade);
         return $this->gradings()->create(compact(

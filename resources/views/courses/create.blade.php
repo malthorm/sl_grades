@@ -1,7 +1,10 @@
 @extends('layout_local')
 
 @section('content')
-    <h1>Neue Lehrveranstaltung</h1>
+    <div style="display: flex; align-items: center;" >
+        <h2 style="margin-right: auto;">Neue Lehrveranstaltung</h2>
+        <a href="{{ action('CourseController@index') }}">Zurück</a>
+    </div>
     <hr>
 
     <form class="form-inline" action="{{ action('CourseController@store') }}" method="POST">
@@ -20,4 +23,10 @@
         <button type="submit" class="btn btn-default">Lehrveranstaltung erstellen</button>
 
     </form>
+
+    @if (session('message'))
+    <div class="alert alert-danger" role="alert" style="margin-top: 20px">
+        <strong>{{ session('message') }}</strong>
+    </div>
+    @endif
 @endsection

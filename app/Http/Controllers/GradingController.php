@@ -9,6 +9,7 @@ use App\ShibbAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Exceptions\GradeHandlingException;
+use App\Exceptions\UniIdentifierException;
 use App\Exceptions\InvalidStudentException;
 
 class GradingController extends Controller
@@ -24,7 +25,7 @@ class GradingController extends Controller
         if (!ShibbAuth::isAuthenticated()) {
             return view('login');
         }
-        // should only authorize students if not debugging?
+
         if (!(ShibbAuth::authorize('student') || $this->authorize('mitarbeiter'))) {
             abort(403);
         }
@@ -33,8 +34,9 @@ class GradingController extends Controller
                 $user = $_SERVER['REMOTE_USER'];
                 $student = Student::findByUniIdentifier($user);
                 return view('student', compact('student'));
+
+            // for testing
             } else {
-                // for testing
                 if (!$request->filled('uni_identifier')) {
                     return view('student_debug');
                 }
@@ -43,10 +45,11 @@ class GradingController extends Controller
                 );
                 return view('student_debug', compact('student'));
             }
-        } catch (GradeHandlingException $e) {
+        } catch (InvalidStudentException $e) {
             report($e);
             return back()->withError(
-                'Ein unerwarteter Fehler ist aufgetreten.'
+                'Es scheint ein Problem mit dem Unikennzeichen zu geben.' .
+                ' Kontaktieren Sie den Administrator.'
             )->withInput();
         }
     }
@@ -66,10 +69,17 @@ class GradingController extends Controller
         if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
+
+        $validationErrorMsg = [
+            'uni_identifier.required' => 'Bitte ein Unikennzeichen angeben.',
+            'grade.required' => 'Bitte eine Note eintragen',
+            'grade.regex' => 'Keine gültige Note.'
+        ];
         $attributes = $request->validate([
-            'uni_identifier' => 'required|min:2',
-            'grade' => 'required|regex:/^[1-5][.,][037]$/'
-        ]);
+            'uni_identifier' => 'required',
+            'grade' => ['required', 'regex:/^[1-3][.][037]|[45][.]0$/']
+        ], $validationErrorMsg);
+
         try {
             // first check if already graded, so you don't have to decrypt all students
             if ($course->isGraded($attributes['uni_identifier'])) {
@@ -90,21 +100,17 @@ class GradingController extends Controller
 
             $student = Student::findOrCreate($attributes['uni_identifier']);
             $grade = $course->gradeStudent($student, $attributes['grade']);
-
+        } catch (UniIdentifierException $e) {
             if ($request->ajax()) {
                 return response()->json([
-                    'id' => $grade->id,
-                    'uni_identifier' => $attributes['uni_identifier'],
-                    'grade' => $attributes['grade']
+                    'msg' => $e->getMessage(),
+                    'exception' => true
                 ]);
-            } else {
-                session()->flash('message', $attributes['uni_identifier'] . ' benotet');
-                return redirect("courses/$course->id");
             }
-        } catch (GradeHandlingException $e) {
+            return back()->withError($msg)->withInput();
+        } catch (InvalidStudentException $e) {
             report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Note konnte' .
-            ' nicht gespeichert werden.';
+            $msg = 'Fehler in der Datenbank. Kontaktieren Sie den Administrator.';
             if ($request->ajax()) {
                 return response()->json([
                     'msg' => $msg,
@@ -112,6 +118,17 @@ class GradingController extends Controller
                 ]);
             }
             return back()->withError($msg)->withInput();
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                    'id' => $grade->id,
+                    'uni_identifier' => $attributes['uni_identifier'],
+                    'grade' => $attributes['grade']
+                ]);
+        } else {
+            session()->flash('message', $attributes['uni_identifier'] . ' benotet');
+            return redirect("courses/$course->id");
         }
     }
 
@@ -132,47 +149,10 @@ class GradingController extends Controller
         }
         try {
             $uni_identifier = $grading->decryptUniIdentifier(true);
-            if (!env('APP_DEBUG')) {
-                // students are only allowed to delete there own gradings
-                if (ShibbAuth::authorize('student') &&
-                $_SERVER['REMOTE_USER'] != $uni_identifier) {
-                    abort(403);
-                }
-            }
-            if (request()->ajax()) {
-                Grading::destroy($grading->id);
-                $this->maintenance($grading->student);
-                return response()->json([
-                    'success' => true,
-                    'id' => $uni_identifier
-                ]);
-            }
-
-            $grading->delete();
-            $this->maintenance($grading->student);
-            session()->flash(
-                'message',
-                $uni_identifier . ' gelöscht'
-            );
-            if (ShibbAuth::authorize('student')) {
-                return redirect()->action('GradingController@index');
-            }
-            return redirect("courses/$grading->course_id");
-        } catch (GradeHandlingException $e) {
-            report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Note konnte' .
-            ' nicht gelöscht werden.';
-            if ($request->ajax()) {
-                return response()->json([
-                    'msg' => $msg,
-                    'exception' => true
-                ]);
-            }
-            return back()->withError($msg)->withInput();
         } catch (InvalidStudentException $e) {
             report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Student' .
-            ' nicht entschlüsselt werden werden.';
+            $msg = 'Fehler in der Datenbank. Kontaktieren Sie den' .
+                ' Administrator.';
             if ($request->ajax()) {
                 return response()->json([
                     'msg' => $msg,
@@ -181,6 +161,32 @@ class GradingController extends Controller
             }
             return back()->withError($msg)->withInput();
         }
+        if (!env('APP_DEBUG')) {
+            // students are only allowed to delete there own gradings
+            if (ShibbAuth::authorize('student') &&
+            $_SERVER['REMOTE_USER'] != $uni_identifier) {
+                abort(403);
+            }
+        }
+        if (request()->ajax()) {
+            Grading::destroy($grading->id);
+            $this->maintenance($grading->student);
+            return response()->json([
+                'success' => true,
+                'id' => $uni_identifier
+            ]);
+        }
+
+        $grading->delete();
+        $this->maintenance($grading->student);
+        session()->flash(
+            'message',
+            $uni_identifier . ' gelöscht'
+        );
+        if (ShibbAuth::authorize('student')) {
+            return redirect()->action('GradingController@index');
+        }
+        return redirect("courses/$grading->course_id");
     }
 
     /**
@@ -223,69 +229,58 @@ class GradingController extends Controller
             return redirect()->back()->withErrors('Keine .csv Datei.');
         }
 
-        try {
-            $csvData = rtrim(file_get_contents($file));
-            $rows = array_map('str_getcsv', explode("\n", $csvData));
-            $header = array('uni_identifier', 'grade');
+        $csvData = rtrim(file_get_contents($file));
+        $rows = array_map('str_getcsv', explode("\n", $csvData));
+        $header = array('uni_identifier', 'grade');
 
-            // if the second entry in the first row is not a valid grade, the frist
-            // row will be interpreted as a header and discarded
-            if (!preg_match("/^[1-5][.][037]$/", $rows[0][1])) {
-                array_shift($rows);
+        // if the second entry in the first row does not look like a grade,
+        // the frist row will be interpreted as a header and discarded
+        if (!preg_match("/^[\d][.,][\d]$/", $rows[0][1])) {
+            array_shift($rows);
+        }
+        // collect failed an successful gradings for response
+        $errors = array();
+        $gradings = array();
+
+        foreach ($rows as $row) {
+            try {
+                $row = array_combine($header, $row);
+            } catch (\Exception $e) {
+                $errors[] = $row;
+                continue;
+            }
+            $uni_identifier = trim(e($row['uni_identifier']));
+            $grade = trim(e($row['grade']));
+
+            if (!preg_match("/^[1-3][.][037]|[45][.]0$/", $grade)) {
+                $errors[] = $uni_identifier . ',' . $grade . ' - Note ungültig';
+                continue;
             }
 
-            $errors = array();
-            $gradings = array();
-            foreach ($rows as $row) {
+            if (!$course->isGraded($uni_identifier)) {
                 try {
-                    $row = array_combine($header, $row);
-                } catch (\Exception $e) {
-                    $errors[] = $row;
-                    continue;
-                }
-                $uni_identifier = trim(e($row['uni_identifier']));
-                $grade = trim(e($row['grade']));
-
-                if (!preg_match("/^[1-5][.][037]$/", $grade)) {
-                    $errors[] = $uni_identifier . ',' . $grade . ' - ungültig';
-                    continue;
-                }
-
-                if (!$course->isGraded($uni_identifier)) {
                     $student = Student::findOrCreate($uni_identifier);
-                    $grading = Grading::create([
-                        'student_id' => $student->id,
-                        'course_id' => $course->id,
-                        'grade' => encrypt($row['grade'])
-                    ]);
-                    $gradings[] = [
-                        'id' => $grading->id,
-                        'uni_identifier' => $row['uni_identifier'],
-                        'grade' => $row['grade']
-                    ];
-                } else {
-                    $errors[] = $row['uni_identifier'] . ' ist bereits benotet.';
+                } catch (UniIdentifierException $e) {
+                    $errors[] = $uni_identifier . ' - ' . $e->getMessage();
+                    continue;
                 }
-            }
-            if ($request->ajax()) {
-                return response()->json([
-                    'errors' => $errors,
-                    'gradings' => $gradings
-                ]);
+                $grading = $course->gradeStudent($student, $grade);
+                $gradings[] = [
+                    'id' => $grading->id,
+                    'uni_identifier' => $row['uni_identifier'],
+                    'grade' => $grade
+                ];
             } else {
-                return redirect("courses/$course->id")->withErrors($errors);
+                $errors[] = $row['uni_identifier'] . ' ist bereits benotet.';
             }
-        } catch (GradeHandlingException $e) {
-            report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Csv Datei' .
-            ' konnte nicht importiert werden.';
-            if ($request->ajax()) {
-                return response()->json([
-                    'msg' => $msg,
-                    'exception' => true
-                ]);
-            }
-            return back()->withError($msg);
+        }
+        if ($request->ajax()) {
+            return response()->json([
+                'errors' => $errors,
+                'gradings' => $gradings
+            ]);
+        } else {
+            return redirect("courses/$course->id")->withErrors($errors);
         }
     }
 
@@ -296,12 +291,8 @@ class GradingController extends Controller
      */
     private function maintenance(Student $student)
     {
-        try {
-            if ($student->grades->isEmpty()) {
-                $student->delete();
-            }
-        } catch (GradeHandlingException $e) {
-            report($e);
+        if ($student->grades->isEmpty()) {
+            $student->delete();
         }
     }
 }

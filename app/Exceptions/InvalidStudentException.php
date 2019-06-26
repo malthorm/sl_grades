@@ -11,6 +11,6 @@ class InvalidStudentException extends \Exception
      */
     public function report()
     {
-        \Log::error('Invalid Student record.');
+        \Log::error('Invalid Student record in db.');
     }
 }

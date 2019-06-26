@@ -85,7 +85,6 @@ class Grading extends Model
     {
         $attempts = $this->attempts($module, $studentId);
         foreach ($attempts as $attempt) {
-            // higher enrollment id means created later(maybe should check semester instead) //use created_at?
             if ($this->id < $attempt->id) {
                 return false;
             }

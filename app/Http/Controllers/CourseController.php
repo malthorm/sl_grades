@@ -10,17 +10,21 @@ use App\ShibbAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use App\Exception\InvalidGradingException;
-use App\Exceptions\CourseHandlingException;
 use App\Exceptions\InvalidStudentException;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class CourseController extends Controller
 {
     protected $validationRules = [
-                'module_no' => 'required',
-                'module_title' => 'required',
-                'semester' => 'required'
-            ];
+        'module_no' => 'required',
+        'module_title' => 'required',
+        'semester' => 'required'
+    ];
+    protected $validationErrorMessages = [
+        'module_no.required' => 'Bitte tragen Sie eine Modulnummer ein',
+        'module_title.required' => 'Bitte geben Sie einen Titel an',
+        'semester.required' => 'Bitte geben Sie das Semester an'
+    ];
 
     /**
      * Display a listing of the courses.
@@ -36,20 +40,14 @@ class CourseController extends Controller
         if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
-        try {
-            $courses = Course::orderBy('updated_at', 'DESC')
-                ->orderBy('created_at', 'DESC')
-                ->paginate(7);
-            if ($request->ajax()) {
-                return view('partials.courseTable', compact('courses'));
-            }
-            return view('courses.index', compact('courses'));
-        } catch (CourseHandlingException $e) {
-            report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurse konnten '.
-            'nicht gefetched werden';
-            return back()->withError($msg);
+
+        $courses = Course::orderBy('updated_at', 'DESC')
+            ->orderBy('created_at', 'DESC')
+            ->paginate(7);
+        if ($request->ajax()) {
+            return view('partials.courseTable', compact('courses'));
         }
+        return view('courses.index', compact('courses'));
     }
 
     /**
@@ -118,7 +116,7 @@ class CourseController extends Controller
                 return view('partials.courseTable', compact('courses'));
             }
             return view('courses.index', compact('courses'));
-        } catch (CourseHandlingException $e) {
+        } catch (\Exception $e) {
             report($e);
             $msg = 'Bei der Suche ist ein unerwarteter Fehler aufgetreten';
             if ($request->ajax()) {
@@ -161,39 +159,44 @@ class CourseController extends Controller
         if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
-        try {
-            $validatedRequest = $request->validate($this->validationRules);
 
-            $module = Module::firstOrCreate([
-                'number' => $validatedRequest['module_no'],
-                'title' => $validatedRequest['module_title']
-            ]);
-            $course = new Course;
-            if ($course->duplicate(
-                $module->id,
-                $validatedRequest['semester']
-            )) {
-                $msg = 'Kurs existiert bereits.';
-                if ($request->ajax()) {
-                    return response()->json([
-                        'error' => true,
-                        'msg' => $msg
-                    ]);
-                } else {
-                    session()->flash('message', $msg);
-                    return redirect()->back()->withInput();
-                }
+        $validatedRequest = $request->validate(
+            $this->validationRules,
+            $this->validationErrorMessages
+        );
+
+        $module = Module::firstOrCreate([
+            'number' => $validatedRequest['module_no'],
+            'title' => $validatedRequest['module_title']
+        ]);
+
+        $course = new Course;
+        if ($course->duplicate(
+            $module->id,
+            $validatedRequest['semester']
+        )) {
+            $msg = 'Kurs existiert bereits.';
+            if ($request->ajax()) {
+                return response()->json([
+                    'error' => true,
+                    'msg' => $msg
+                ]);
+            } else {
+                session()->flash('message', $msg);
+                return redirect()->back()->withInput();
             }
-            $course->module_id = $module->id;
-            $course->semester = $validatedRequest['semester'];
+        }
+        $course->module_id = $module->id;
+        $course->semester = $validatedRequest['semester'];
 
+        try {
             $course->save();
 
             if ($request->ajax()) {
                 return view('partials.courseTableEntry', compact('course'));
             }
             return redirect('courses/');
-        } catch (CourseHandlingException $e) {
+        } catch (\Exception $e) {
             report($e);
             $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurs konnte' .
             ' nicht gespeichert werden.';
@@ -221,7 +224,7 @@ class CourseController extends Controller
         if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
-        // decrypt uni_identifiers and grades
+
         try {
             $course->gradings->each(function ($grading) {
                 $grading->decryptUniIdentifier();
@@ -229,8 +232,8 @@ class CourseController extends Controller
             });
         } catch (InvalidGradingException $e) {
             report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Note konnten' .
-            ' nicht entschlüsselt werden.';
+            $msg = 'Fehler in der Datenbank. Kontaktieren Sie den ' .
+            'Administrator.';
             if ($request->ajax()) {
                 return response()->json([
                     'msg' => $msg,
@@ -240,8 +243,8 @@ class CourseController extends Controller
             return back()->withError($msg)->withInput();
         } catch (InvalidStudentException $e) {
             report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Student' .
-            ' nicht entschlüsselt werden.';
+            $msg = 'Fehler in der Datenbank. Kontaktieren Sie den ' .
+            'Administrator.';
             if ($request->ajax()) {
                 return response()->json([
                     'msg' => $msg,
@@ -292,87 +295,78 @@ class CourseController extends Controller
             abort(403);
         }
 
-        try {
-            $validatedRequest = $request->validate($this->validationRules);
-            $currentModule = $course->module;
-            $newModule = Module::
-                        where('number', $validatedRequest['module_no'])
-                        ->where('title', $validatedRequest['module_title'])
-                        ->first();
-            $newSemester = $validatedRequest['semester'];
+        $validatedRequest = $request->validate(
+            $this->validationRules,
+            $this->validationErrorMessages
+        );
 
-            if (($currentModule == $newModule) &&
-                    ($course->semester === $newSemester)) {
+        $currentModule = $course->module;
+        $newModule = Module::
+                    where('number', $validatedRequest['module_no'])
+                    ->where('title', $validatedRequest['module_title'])
+                    ->first();
+        $newSemester = $validatedRequest['semester'];
+
+        if (($currentModule == $newModule) &&
+                ($course->semester === $newSemester)) {
+            return $this->courseUpdatedResponse(
+                $request,
+                $course,
+                'Daten unverändert',
+                true
+            );
+        } elseif (($currentModule == $newModule) &&
+                ($course->semester !== $newSemester)) {
+            // check if the  course already exists for the new semester
+            if ($course->duplicate($currentModule->id, $newSemester)) {
                 return $this->courseUpdatedResponse(
                     $request,
                     $course,
-                    'Daten unverändert',
+                    'Der Kurs existiert bereits für das Semester.',
                     true
                 );
-            } elseif (($currentModule == $newModule) &&
-                    ($course->semester !== $newSemester)) {
-                // check if the  course already exists for the new semester
-                if ($course->duplicate($currentModule->id, $newSemester)) {
+            } else {
+                $course->semester = $newSemester;
+                $course->save();
+                return $this->courseUpdatedResponse(
+                    $request,
+                    $course,
+                    'Semester geändert'
+                );
+            }
+        } else {
+            // check if new module exists already
+            if (!$newModule) {
+                // create a new Module and update the course
+                $newModule = Module::create([
+                        'number' => $validatedRequest['module_no'],
+                        'title' => $validatedRequest['module_title']
+                    ]);
+                $course->updateAttributes($newModule, $newSemester);
+                return $this->courseUpdatedResponse(
+                    $request,
+                    $course,
+                    'Änderung gespeichert.'
+                );
+            } else {
+                // newModule exists already, so check if a course for that
+                // semester exists as well
+                if ($course->duplicate($newModule->id, $newSemester)) {
                     return $this->courseUpdatedResponse(
                         $request,
                         $course,
-                        'Der Kurs existiert bereits für das Semester.',
+                        'Der Kurs existiert bereits.',
                         true
                     );
                 } else {
-                    $course->semester = $newSemester;
-                    $course->save();
-                    return $this->courseUpdatedResponse(
-                        $request,
-                        $course,
-                        'Semester geändert'
-                    );
-                }
-            } else {
-                // check if new module exists already
-                if (!$newModule) {
-                    // create a new Module and update the course
-                    $newModule = Module::create([
-                            'number' => $validatedRequest['module_no'],
-                            'title' => $validatedRequest['module_title']
-                        ]);
                     $course->updateAttributes($newModule, $newSemester);
                     return $this->courseUpdatedResponse(
                         $request,
                         $course,
                         'Änderung gespeichert.'
                     );
-                } else {
-                    // newModule exists already, so check if a course for that
-                    // semester exists as well
-                    if ($course->duplicate($newModule->id, $newSemester)) {
-                        return $this->courseUpdatedResponse(
-                            $request,
-                            $course,
-                            'Der Kurs existiert bereits.',
-                            true
-                        );
-                    } else {
-                        $course->updateAttributes($newModule, $newSemester);
-                        return $this->courseUpdatedResponse(
-                            $request,
-                            $course,
-                            'Änderung gespeichert.'
-                        );
-                    }
                 }
             }
-        } catch (CourseHandlingException $e) {
-            report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurs konnte' .
-            ' nicht updated werden.';
-            if ($request->ajax()) {
-                return response()->json([
-                    'msg' => $msg,
-                    'exception' => true
-                ]);
-            }
-            return back()->withError($msg)->withInput();
         }
     }
 
@@ -391,20 +385,7 @@ class CourseController extends Controller
         if (!ShibbAuth::authorize('mitarbeiter')) {
             abort(403);
         }
-        try {
-            $course->delete();
-        } catch (CourseHandlingException $e) {
-            report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurs konnte' .
-            ' nicht gelöscht werden.';
-            if ($request->ajax()) {
-                return response()->json([
-                    'msg' => $msg,
-                    'exception' => true
-                ]);
-            }
-            return back()->withError($msg);
-        }
+        $course->delete();
         $this->maintenance($course->module);
 
         if ($request->ajax()) {

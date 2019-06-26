@@ -4,6 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Exception\InvalidStudentException;
+use App\Exceptions\UniIdentifierException;
 
 class Student extends Model
 {
@@ -18,8 +19,8 @@ class Student extends Model
      */
     public static function findOrCreate(string $uniIdentifier)
     {
-        if ((strlen($uniIdentifier) < 3) || (strlen($uniIdentifier) > 15)) {
-            throw new \Exception('uniIdentifier too long or too short.');
+        if ((strlen($uniIdentifier) < 2) || (strlen($uniIdentifier) > 20)) {
+            throw new UniIdentifierException('Kennung muss 2-20 Zeichen lang sein.');
         }
 
         $student = Student::findByUniIdentifier($uniIdentifier);

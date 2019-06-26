@@ -11,6 +11,6 @@ class InvalidGradingException extends \Exception
      */
     public function report()
     {
-        \Log::error('Invalid grading record.');
+        \Log::error('Invalid grading record in db.');
     }
 }
