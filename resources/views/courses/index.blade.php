@@ -3,7 +3,8 @@
 @section('content')
     <div class="row">
         <div class="col-sm-7">
-            <h2>Lehrveranstaltungen</h2>
+
+            <h3>Lehrveranstaltungen</h3>
             <noscript>
                 <a href="courses/create">Neue Lehrveranstaltung</a>
             </noscript>
