@@ -48,6 +48,7 @@ $(document).ready(function (){
     $('#courseTable').delegate('.csvbtn', 'click', function(e){
         $('#addGradeForm').hide();
         $('#csvForm').show();
+        $('#switchGradeFormBtn').text('Manuell');
         // get current course data
         $tr = $(this).closest('tr');
         let data = $tr.children("td").map(function(){
@@ -64,6 +65,7 @@ $(document).ready(function (){
         //hide csvForm
         $('#csvForm').hide();
         $('#addGradeForm').show();
+        $('#switchGradeFormBtn').text('Csv');
         // get current course data
         $tr = $(this).closest('tr');
         let data = $tr.children("td").map(function(){
@@ -159,6 +161,27 @@ $(document).ready(function (){
             $('.activeDropdown').removeClass('activeDropdown');
         }
     });
+
+    // empty content and hide gradeModalAlert
+    $('#gradeModalAlertDismissBtn').on('click', function(e){
+        e.preventDefault();
+        $('#gradeModalAlertMsg').empty();
+        $('#gradeModalAlert').hide();
+    });
+
+    //switch between forms for csv import and sing grading
+    $('#switchGradeFormBtn').on('click', function(){
+        if ($('#csvForm').is(':hidden')) {
+            $('#switchGradeFormBtn').text('Manuell');
+            $('#addGradeForm').hide();
+            $('#csvForm').show();
+        } else if ($('#addGradeForm').is(':hidden')) {
+            $('#switchGradeFormBtn').text('Csv');
+            $('#csvForm').hide();
+            $('#addGradeForm').show();
+
+        }
+    })
 });
 
 /*
@@ -191,7 +214,7 @@ function ajaxImportCSV(courseId)
                 $('#gradeModalAlertMsg').append("<li>"+response.msg+"</li>");
                 $('#gradeModalAlert').show();
             }
-            if (response.errors) {
+            if (response.errors.length > 0) {
                 for (error of response.errors) {
                     $('#gradeModalAlertMsg').append("<li>" + error + "</li>");
                 }

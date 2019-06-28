@@ -300,6 +300,7 @@ class CourseController extends Controller
             $this->validationErrorMessages
         );
 
+
         $currentModule = $course->module;
         $newModule = Module::
                     where('number', $validatedRequest['module_no'])

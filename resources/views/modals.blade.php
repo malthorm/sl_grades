@@ -129,7 +129,7 @@
                 </form>
                 <form id="addGradeForm">
                     @csrf
-                    <div class="table-responsive">
+                    <div class="table-responsive" style="margin-bottom: -35px; padding-top: 5px; padding-bottom: 5px;">
                         <table class="table">
                             <tbody>
                                 <tr>
@@ -149,14 +149,14 @@
                     </div>
                 </form>
 
-                <div class="alert alert-info alert-dismissible" role="alert" id="gradeModalAlert" hidden style="margin-top: 10px; margin-bottom: 0px;">
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <div class="alert alert-info" role="alert" id="gradeModalAlert" hidden style="margin-top: 10px; margin-bottom: 0px;">
+                    <button id="gradeModalAlertDismissBtn" type="button" class="close" aria-label="Close" style="margin-right: 15px; margin-top: -10px;">
                         <span aria-hidden="true">&times;</span>
                     </button>
                     <ul id="gradeModalAlertMsg">
                     </ul>
                 </div>
-                </div>
+            </div>
 
             <div class="modal-body">
                 <div class="table-reponsive">
@@ -165,7 +165,9 @@
                             <th scope="col">#</th>
                             <th scope="col">Unikennzeichen</th>
                             <th scope="col">Note</th>
-                            <th scope="col">Löschen</th>
+                            <th scope="col">
+                                <button class="btn btn-primary btn-sm" type="button" id="switchGradeFormBtn" style="width: 69px"></button>
+                            </th>
                         </thead>
                         <tbody>
                             <!-- Dynamic input -->

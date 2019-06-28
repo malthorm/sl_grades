@@ -1,4 +1,4 @@
-@extends('layout_local')
+@extends('layout')
 
 @section('content')
      <div class="btn-group btn-group-justified">
@@ -37,9 +37,9 @@
                          value="{{ old('grade') }}" />
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" align="right">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-success">
+                        <button type="submit" class="btn btn-primary">
                                Student hinzufügen
                         </button>
                     </div>

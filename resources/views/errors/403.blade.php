@@ -1,4 +1,4 @@
-@extends('layout_local')
+@extends('layout')
 
 @section('content')
     <h2 align="center">403: Zugriff nicht gestattet.</h2>

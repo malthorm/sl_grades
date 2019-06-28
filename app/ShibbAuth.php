@@ -24,19 +24,28 @@ class ShibbAuth
             return true;
         }
 
+
+
         $affiliations = ShibbAuth::getShibAffiliations();
         if (!is_array($affiliations)) {
             return false;
         }
-        if ($affiliation === "mitarbeiter") {
+        if ($affiliation == "mitarbeiter") {
             $affiliation = $affiliation . '@tu-chemnitz.de';
+            //testing
+            $admins = explode(';', env('admins'));
+            // dd($admins);
+            return in_array($_SERVER['REMOTE_USER'], $admins) ? true : false;
+        // if ($_SERVER['REMOTE_USER'] == 'malth') {
+            //     return true;
+            // }
 
 
-            return in_array($affiliation, ShibbAuth::getShibAffiliations())
-                 ? true : false;
-        } elseif ($affiliation === "student") {
+            // return in_array($affiliation, $affiliations)
+            //      ? true : false;
+        } elseif ($affiliation == "student") {
             $affiliation = $affiliation . '@tu-chemnitz.de';
-            return in_array($affiliation, ShibbAuth::getShibAffiliations())
+            return in_array($affiliation, $affiliations)
              ? true : false;
         } else {
             return false;

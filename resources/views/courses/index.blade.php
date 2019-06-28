@@ -1,10 +1,12 @@
-@extends('layout_local')
+@extends('layout')
 
 @section('content')
     <div class="row">
         <div class="col-sm-7">
-            <h3>Lehrveranstaltungen</h3>
-            <a href="courses/create">Neue Lehrveranstaltung</a>
+            <h2>Lehrveranstaltungen</h2>
+            <noscript>
+                <a href="courses/create">Neue Lehrveranstaltung</a>
+            </noscript>
         </div>
         <div class="col-sm-5">
             <div class="pull-right">

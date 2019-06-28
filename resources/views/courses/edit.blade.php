@@ -1,4 +1,4 @@
-@extends('layout_local')
+@extends('layout')
 
 @section('content')
          <div class="btn-group btn-group-justified">
@@ -17,6 +17,15 @@
             <div class="panel-heading">
                 <div>
                     <h3>{{ $course->module->title }}: {{ $course->semester }}</h3>
+                    @if ($errors->any())
+                      <div class="alert alert-danger" role="alert" style="margin-top: 10px">
+                          <ul>
+                              @foreach ($errors->all() as $error)
+                                  <li>{{ $error }}</li>
+                              @endforeach
+                          </ul>
+                      </div>
+                    @endif
                 </div>
 
                 @if (session('error'))

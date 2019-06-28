@@ -77,7 +77,7 @@ class GradingController extends Controller
         ];
         $attributes = $request->validate([
             'uni_identifier' => 'required',
-            'grade' => ['required', 'regex:/^[1-3][.][037]|[45][.]0$/']
+            'grade' => ['required', 'regex:/^[1-3][.][037]$|^[45][.]0$/']
         ], $validationErrorMsg);
 
         try {
@@ -163,9 +163,10 @@ class GradingController extends Controller
         }
         if (!env('APP_DEBUG')) {
             // students are only allowed to delete there own gradings
-            if (ShibbAuth::authorize('student') &&
-            $_SERVER['REMOTE_USER'] != $uni_identifier) {
-                abort(403);
+            if (!ShibbAuth::authorize('mitarbeiter')) {
+                if ($_SERVER['REMOTE_USER'] != $uni_identifier) {
+                    abort(403);
+                }
             }
         }
         if (request()->ajax()) {
@@ -183,10 +184,7 @@ class GradingController extends Controller
             'message',
             $uni_identifier . ' gelöscht'
         );
-        if (ShibbAuth::authorize('student')) {
-            return redirect()->action('GradingController@index');
-        }
-        return redirect("courses/$grading->course_id");
+        return redirect()->back();
     }
 
     /**
@@ -252,8 +250,20 @@ class GradingController extends Controller
             $uni_identifier = trim(e($row['uni_identifier']));
             $grade = trim(e($row['grade']));
 
-            if (!preg_match("/^[1-3][.][037]|[45][.]0$/", $grade)) {
+            if (!preg_match("/^[1-3][.][037]$|^[45][.]0$/", $grade)) {
                 $errors[] = $uni_identifier . ',' . $grade . ' - Note ungültig';
+                continue;
+            }
+
+            // check that same student not graded twice in the csv
+            $csvDuplicate = false;
+            foreach ($gradings as $grading) {
+                if ($grading['uni_identifier'] === $uni_identifier) {
+                    $errors[] = $uni_identifier . ' mehrfach in csv-Datei.';
+                    $csvDuplicate = true;
+                }
+            }
+            if ($csvDuplicate) {
                 continue;
             }
 
@@ -271,7 +281,7 @@ class GradingController extends Controller
                     'grade' => $grade
                 ];
             } else {
-                $errors[] = $row['uni_identifier'] . ' ist bereits benotet.';
+                $errors[] = $uni_identifier . ' ist bereits benotet.';
             }
         }
         if ($request->ajax()) {

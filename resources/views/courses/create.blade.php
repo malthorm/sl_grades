@@ -1,4 +1,4 @@
-@extends('layout_local')
+@extends('layout')
 
 @section('content')
     <div style="display: flex; align-items: center;" >
