@@ -45,7 +45,7 @@ class CourseController extends Controller
     {
         $this->authorizeRequest('admin');
 
-        if ($request->query('query') == '') {
+        if (request()->query('query') == '') {
             $courses = Course::orderBy('updated_at', 'DESC')
                 ->orderBy('created_at', 'DESC')
                 ->paginate(7);
@@ -57,7 +57,7 @@ class CourseController extends Controller
             }
         }
 
-        $query = '%' . $request->query('query') . '%';
+        $query = '%' . request()->query('query') . '%';
         $modules = Module::where('title', 'LIKE', $query)
                     ->orWhere('number', 'LIKE', $query)
                     ->orderBy('updated_at', 'DESC')
@@ -80,8 +80,8 @@ class CourseController extends Controller
         $page = Input::get('page', 1);
         $offset = ($page * $paginate) - $paginate;
         $options = [
-            'path' => $request->url(),
-            'query' => $request->query()
+            'path' => request()->url(),
+            'query' => request()->query()
         ];
         $courses = $courses->all();
         $itemsForCurrentPage = array_slice(
@@ -226,7 +226,7 @@ class CourseController extends Controller
      * @param  \App\Course  $course
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Course $course)
+    public function update(Course $course)
     {
         $this->authorizeRequest('admin');
 
@@ -243,7 +243,7 @@ class CourseController extends Controller
         if (($currentModule == $newModule) &&
                 ($course->semester === $newSemester)) {
             return $this->courseUpdatedResponse(
-                $request,
+                request(),
                 $course,
                 'Daten unverändert',
                 true
@@ -253,7 +253,7 @@ class CourseController extends Controller
             // check if the  course already exists for the new semester
             if ($course->duplicate($currentModule->id, $newSemester)) {
                 return $this->courseUpdatedResponse(
-                    $request,
+                    request(),
                     $course,
                     'Der Kurs existiert bereits für das Semester.',
                     true
@@ -262,7 +262,7 @@ class CourseController extends Controller
                 $course->semester = $newSemester;
                 $course->save();
                 return $this->courseUpdatedResponse(
-                    $request,
+                    request(),
                     $course,
                     'Semester geändert'
                 );

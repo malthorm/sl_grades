@@ -1,1 +1,1 @@
-@extends ('layouts.dev')
+@extends ('layouts.prod')
