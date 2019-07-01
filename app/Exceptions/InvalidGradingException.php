@@ -2,6 +2,9 @@
 
 namespace App\Exceptions;
 
+/**
+ * Most likely a grade has been stored unencrypted in the db.
+ */
 class InvalidGradingException extends \Exception
 {
     /**

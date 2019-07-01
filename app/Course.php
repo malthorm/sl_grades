@@ -15,7 +15,7 @@ class Course extends Model
      */
     public function gradings()
     {
-        return $this->hasMany(Grading::class);
+        return $this->hasMany(Grading::class)->latest();
     }
 
     /**
@@ -57,10 +57,11 @@ class Course extends Model
     {
         $student_id = $student->id;
         $grade = encrypt($grade);
-        return $this->gradings()->create(compact(
+        $grading = $this->gradings()->create(compact(
             'student_id',
             'grade'
         ));
+        return $grading;
     }
 
     /**
@@ -87,12 +88,21 @@ class Course extends Model
      *
      * @param App\Module $module
      * @param string $semester
-     * @return mixed (bool || App\Course)
+     * @return mixed (null || App\Course)
      */
     public function duplicate(int $moduleId, string $semester)
     {
         return Course::where('module_id', $moduleId)
                 ->where('semester', $semester)
                 ->first();
+    }
+
+    /**
+     * Returns the relative path of the course
+     * @return string
+     */
+    public function path()
+    {
+        return "courses/{$this->id}";
     }
 }

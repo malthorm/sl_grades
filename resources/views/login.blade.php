@@ -1,18 +1,11 @@
-@extends('layout')
+@extends('layouts.app')
 
 @section('content')
 
-
-    <a href="/Shibboleth.sso/Login?target=https://www.tu-chemnitz.de/~malth/">Login</a>
-
     <div>
-        <form action="{{ action('CourseController@testAuth') }}">
-            <button type="submit">Student</button>
-        </form>
+        <a class="btn btn-primary" href="/Shibboleth.sso/Login?target=https://www.tu-chemnitz.de/~malth/">
+            WTC Login
+        </a>
     </div>
-    <div>
-        <form action="{{ action('CourseController@testAuth', [true]) }}">
-            <button type="submit">Student</button>
-        </form>
-    </div>
+
 @endsection

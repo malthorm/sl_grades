@@ -1,4 +1,4 @@
-@extends('layout')
+@extends('layouts.app')
 
 @section('content')
      <div class="btn-group btn-group-justified">
@@ -17,6 +17,32 @@
 
     <div class="panel panel-default">
         <div class="panel-heading">
+        <h2 align="center">{{ $course->module->number .': '. $course->module->title .' - '. $course->semester }}</h2>
+
+            @if ($errors->any())
+                <div class="alert alert-danger" role="alert" style="margin-top: 10px">
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+
+            @elseif (session('danger'))
+            <div class="alert alert-danger" role="alert" style="margin-top: 10px">
+                <strong>{{ session('danger') }}</strong>
+            </div>
+            @elseif (session('message'))
+            <div class="alert alert-info" role="alert" style="margin-top: 10px">
+                <strong>{{ session('message') }}</strong>
+            </div>
+            @elseif (session('change'))
+            <div class="alert alert-info" role="alert" style="margin-top: 10px">
+                <strong>{{ session('change') }}</strong>
+            </div>
+            @endif
+        </div>
+        <div class="panel-body">
             <form action="{{ action('GradingController@store', [$course->id]) }}" method="POST" class="form-horizontal" role="form">
                 @csrf
                 <div class="form-group">
@@ -45,30 +71,8 @@
                     </div>
                 </div>
             </form>
-            @if ($errors->any())
-                <div class="alert alert-danger" role="alert" style="margin-top: 10px">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
 
-            @elseif (session('danger'))
-            <div class="alert alert-danger" role="alert" style="margin-top: 10px">
-                <strong>{{ session('danger') }}</strong>
-            </div>
-            @elseif (session('message'))
-            <div class="alert alert-info" role="alert" style="margin-top: 10px">
-                <strong>{{ session('message') }}</strong>
-            </div>
-            @elseif (session('change'))
-            <div class="alert alert-info" role="alert" style="margin-top: 10px">
-                <strong>{{ session('change') }}</strong>
-            </div>
-            @endif
-        </div>
-        <div class="panel-body">
+            <hr />
             <div class="table-responsive">
                 <table class="table horizontal table-sm">
                     <thead>

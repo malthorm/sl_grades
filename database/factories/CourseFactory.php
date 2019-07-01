@@ -14,11 +14,13 @@ use Faker\Generator as Faker;
 |
 */
 
-$factory->define(User::class, function (Faker $faker) {
+$factory->define(App\Course::class, function (Faker $faker) {
+    $year = (string) $faker->randomNumber(2);
+    $semesters = array('WS ', 'SS ');
+    $key = array_rand($semesters);
+    $semester =  $semesters[$key] . $year;
     return [
-        'module_id' => function () {
-            return factory(App\Module::class)->create()->id;
-        },
-        'semester' => $faker->word,
+        'module_id' => factory(\App\Module::class),
+        'semester' => $semester
     ];
 });

@@ -1,4 +1,4 @@
-@extends ('layout')
+@extends ('layouts.app')
 
 @section ('content')
     <h1>Meine Studienleistungen</h1>
@@ -35,14 +35,14 @@
                 </tr>
             @else
                 @foreach ($student->grades as $grade)
-                    @if ($grade->islatestAttempt($grade->course->module, $student->id))
+                    @if ($student->isLatestAttemptInModule($grade->course->module, $grade))
                     @php $grade->decryptGrade() @endphp
                     <tr>
                         <td>{{ $grade->course->module->number }}</td>
                         <td>{{ $grade->course->module->title }}</td>
                         <td>{{ $grade->grade }}</td>
                         <td>{{ $grade->course->semester }}</td>
-                        <td>{{ $grade->countAttempts($grade->course->module, $student->id) }}</td>
+                        <td>{{ $student->countAttemptsInModule($grade->course->module) }}</td>
                         <td>
                             <form action="{{ action('GradingController@destroy', [$grade->id]) }}" method="POST">
                                 @csrf

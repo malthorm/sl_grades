@@ -6,7 +6,6 @@ use App\Course;
 use App\Module;
 use App\Grading;
 use App\Student;
-use App\ShibbAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use App\Exception\InvalidGradingException;
@@ -15,36 +14,23 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class CourseController extends Controller
 {
-    protected $validationRules = [
-        'module_no' => 'required',
-        'module_title' => 'required',
-        'semester' => 'required'
-    ];
-    protected $validationErrorMessages = [
-        'module_no.required' => 'Bitte tragen Sie eine Modulnummer ein',
-        'module_title.required' => 'Bitte geben Sie einen Titel an',
-        'semester.required' => 'Bitte geben Sie das Semester an'
-    ];
+
+
+
 
     /**
      * Display a listing of the courses.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index()
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
+        $this->authorizeRequest('admin');
 
         $courses = Course::orderBy('updated_at', 'DESC')
             ->orderBy('created_at', 'DESC')
             ->paginate(7);
-        if ($request->ajax()) {
+        if (request()->ajax()) {
             return view('partials.courseTable', compact('courses'));
         }
         return view('courses.index', compact('courses'));
@@ -53,80 +39,69 @@ class CourseController extends Controller
     /**
      * Display the search result of the resource.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function search(Request $request)
+    public function search()
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
-        try {
-            if ($request->query('query') == '') {
-                $courses = Course::orderBy('updated_at', 'DESC')->paginate(7);
-                if ($request->ajax()) {
-                    return view('partials.courseTable', compact('courses'));
-                } else {
-                    return view('courses.index', compact('courses'));
-                }
-            }
-            $query = '%' . $request->query('query') . '%';
-            $modules = Module::where('title', 'LIKE', $query)
-                        ->orWhere('number', 'LIKE', $query)
-                        ->orderBy('updated_at', 'DESC')
-                        ->orderBy('created_at', 'DESC')
-                        ->get();
+        $this->authorizeRequest('admin');
 
-            $courses = Course::where('semester', 'LIKE', $query)
-                ->orderBy('updated_at', 'DESC')
+        if ($request->query('query') == '') {
+            $courses = Course::orderBy('updated_at', 'DESC')
                 ->orderBy('created_at', 'DESC')
-                ->get();
+                ->paginate(7);
 
-            foreach ($modules as $module) {
-                $courses = $courses->union($module->courses);
-            }
-
-            // paginator
-            $paginate = 7;
-            $page = Input::get('page', 1);
-            $offset = ($page * $paginate) - $paginate;
-            $options = [
-                'path' => $request->url(),
-                'query' => $request->query()
-            ];
-            $courses = $courses->all();
-            $itemsForCurrentPage = array_slice(
-                $courses,
-                $offset,
-                $paginate,
-                true
-            );
-            $courses = new LengthAwarePaginator(
-                $itemsForCurrentPage,
-                count($courses),
-                $paginate,
-                $page,
-                $options
-            );
-
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return view('partials.courseTable', compact('courses'));
+            } else {
+                return view('courses.index', compact('courses')); //back()?
             }
-            return view('courses.index', compact('courses'));
-        } catch (\Exception $e) {
-            report($e);
-            $msg = 'Bei der Suche ist ein unerwarteter Fehler aufgetreten';
-            if ($request->ajax()) {
-                return response()->json([
-                    'msg' => $msg,
-                    'exception' => true
-                ]);
-            }
-            return back()->withError($msg)->withInput();
         }
+
+        $query = '%' . $request->query('query') . '%';
+        $modules = Module::where('title', 'LIKE', $query)
+                    ->orWhere('number', 'LIKE', $query)
+                    ->orderBy('updated_at', 'DESC')
+                    ->orderBy('created_at', 'DESC')
+                    ->get();
+
+        $courses = Course::where('semester', 'LIKE', $query)
+            ->orderBy('updated_at', 'DESC')
+            ->orderBy('created_at', 'DESC')
+            ->get();
+
+        // get all courses that are based on the modules that match the search query,
+        // but don't don't include duplicates
+        foreach ($modules as $module) {
+            $courses = $courses->union($module->courses);
+        }
+
+        // paginator
+        $paginate = 7;
+        $page = Input::get('page', 1);
+        $offset = ($page * $paginate) - $paginate;
+        $options = [
+            'path' => $request->url(),
+            'query' => $request->query()
+        ];
+        $courses = $courses->all();
+        $itemsForCurrentPage = array_slice(
+            $courses,
+            $offset,
+            $paginate,
+            true
+        );
+        $courses = new LengthAwarePaginator(
+            $itemsForCurrentPage,
+            count($courses),
+            $paginate,
+            $page,
+            $options
+        );
+
+        if (request()->ajax()) {
+            return view('partials.courseTable', compact('courses'));
+        }
+        return view('courses.index', compact('courses'));
     }
 
     /**
@@ -136,34 +111,21 @@ class CourseController extends Controller
      */
     public function create()
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
+        $this->authorizeRequest('admin');
+
         return view('courses.create');
     }
 
     /**
      * Store a newly created course in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store()
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
+        $this->authorizeRequest('admin');
 
-        $validatedRequest = $request->validate(
-            $this->validationRules,
-            $this->validationErrorMessages
-        );
+        $validatedRequest = $this->validatedRequest();
 
         $module = Module::firstOrCreate([
             'number' => $validatedRequest['module_no'],
@@ -176,7 +138,7 @@ class CourseController extends Controller
             $validatedRequest['semester']
         )) {
             $msg = 'Kurs existiert bereits.';
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return response()->json([
                     'error' => true,
                     'msg' => $msg
@@ -189,25 +151,12 @@ class CourseController extends Controller
         $course->module_id = $module->id;
         $course->semester = $validatedRequest['semester'];
 
-        try {
-            $course->save();
+        $course->save();
 
-            if ($request->ajax()) {
-                return view('partials.courseTableEntry', compact('course'));
-            }
-            return redirect('courses/');
-        } catch (\Exception $e) {
-            report($e);
-            $msg = 'Ein unerwarteter Fehler ist aufgetreten. Kurs konnte' .
-            ' nicht gespeichert werden.';
-            if ($request->ajax()) {
-                return response()->json([
-                    'msg' => $msg,
-                    'exception' => true
-                ]);
-            }
-            return back()->withError($msg)->withInput();
+        if (request()->ajax()) {
+            return view('partials.courseTableEntry', compact('course'));
         }
+        return redirect($course->path());
     }
 
     /**
@@ -218,12 +167,7 @@ class CourseController extends Controller
      */
     public function show(Course $course)
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
+        $this->authorizeRequest('admin');
 
         try {
             $course->gradings->each(function ($grading) {
@@ -234,7 +178,7 @@ class CourseController extends Controller
             report($e);
             $msg = 'Fehler in der Datenbank. Kontaktieren Sie den ' .
             'Administrator.';
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return response()->json([
                     'msg' => $msg,
                     'exception' => true
@@ -245,13 +189,13 @@ class CourseController extends Controller
             report($e);
             $msg = 'Fehler in der Datenbank. Kontaktieren Sie den ' .
             'Administrator.';
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return response()->json([
                     'msg' => $msg,
                     'exception' => true
                 ]);
             }
-            return back()->withError($msg)->withInput();
+            return back()->withErrors($msg)->withInput();
         }
 
         if (request()->ajax()) {
@@ -269,12 +213,8 @@ class CourseController extends Controller
      */
     public function edit(Course $course)
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
+        $this->authorizeRequest('admin');
+
         return view('courses.edit', compact('course'));
     }
 
@@ -288,17 +228,9 @@ class CourseController extends Controller
      */
     public function update(Request $request, Course $course)
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
+        $this->authorizeRequest('admin');
 
-        $validatedRequest = $request->validate(
-            $this->validationRules,
-            $this->validationErrorMessages
-        );
+        $validatedRequest = $this->validatedRequest();
 
 
         $currentModule = $course->module;
@@ -345,7 +277,7 @@ class CourseController extends Controller
                     ]);
                 $course->updateAttributes($newModule, $newSemester);
                 return $this->courseUpdatedResponse(
-                    $request,
+                    request(),
                     $course,
                     'Änderung gespeichert.'
                 );
@@ -354,7 +286,7 @@ class CourseController extends Controller
                 // semester exists as well
                 if ($course->duplicate($newModule->id, $newSemester)) {
                     return $this->courseUpdatedResponse(
-                        $request,
+                        request(),
                         $course,
                         'Der Kurs existiert bereits.',
                         true
@@ -362,7 +294,7 @@ class CourseController extends Controller
                 } else {
                     $course->updateAttributes($newModule, $newSemester);
                     return $this->courseUpdatedResponse(
-                        $request,
+                        request(),
                         $course,
                         'Änderung gespeichert.'
                     );
@@ -374,22 +306,17 @@ class CourseController extends Controller
     /**
      * Remove the specified course from storage.
      *
-     * @param  \Illuminate\Http\Request $request
      * @param  \App\Course  $course
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Request $request, Course $course)
+    public function destroy(Course $course)
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
+        $this->authorizeRequest('admin');
+
         $course->delete();
         $this->maintenance($course->module);
 
-        if ($request->ajax()) {
+        if (request()->ajax()) {
             return $course;
         }
         session()->flash('delete', 'Lehrveranstaltung gelöscht.');
@@ -435,7 +362,7 @@ class CourseController extends Controller
                     'error',
                     $msg
                 );
-                return redirect("courses/{$course->id}/edit");
+                return redirect($course->path() . '/edit');
             }
         }
 
@@ -446,7 +373,28 @@ class CourseController extends Controller
             );
         } else {
             session()->flash('change', $msg);
-            return redirect("courses/{$course->id}");
+            return redirect($course->path());
         }
+    }
+
+    /**
+     * Validates a form post request for courses.
+     * @return array Returns either the validated attributes or the validation errors.
+     */
+    protected function validatedRequest()
+    {
+        $validationRules = [
+        'module_no' => 'required',
+        'module_title' => 'required',
+        'semester' => 'required'
+        ];
+
+        $validationErrorMessages = [
+            'module_no.required' => 'Bitte tragen Sie eine Modulnummer ein',
+            'module_title.required' => 'Bitte geben Sie einen Titel an',
+            'semester.required' => 'Bitte geben Sie das Semester an'
+        ];
+
+        return request()->validate($validationRules, $validationErrorMessages);
     }
 }

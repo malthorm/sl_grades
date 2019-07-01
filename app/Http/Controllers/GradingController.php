@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Course;
 use App\Grading;
 use App\Student;
-use App\ShibbAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Exceptions\GradeHandlingException;
@@ -17,34 +16,27 @@ class GradingController extends Controller
     /**
      * Display a listing of the grades for the authenticated/specified student.
      *
-     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index()
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-
-        if (!(ShibbAuth::authorize('student') || $this->authorize('mitarbeiter'))) {
-            abort(403);
-        }
+        $this->authorizeRequest('student');
         try {
-            if (env('APP_ENV') == 'production') {
-                $user = $_SERVER['REMOTE_USER'];
-                $student = Student::findByUniIdentifier($user);
-                return view('student', compact('student'));
+            // if (env('APP_ENV') == 'production') {
+            $user = $_SERVER['REMOTE_USER'];
+            $student = Student::findByUniIdentifier($user);
+            return view('student', compact('student'));
 
             // for testing
-            } else {
-                if (!$request->filled('uni_identifier')) {
-                    return view('student_debug');
-                }
-                $student = Student::findByUniIdentifier(
-                    $request->input('uni_identifier')
-                );
-                return view('student_debug', compact('student'));
-            }
+            // } else {
+            //     if (!request()->filled('uni_identifier')) {
+            //         return view('student_debug');
+            //     }
+            //     $student = Student::findByUniIdentifier(
+            //         request()->input('uni_identifier')
+            //     );
+            //     return view('student_debug', compact('student'));
+            // }
         } catch (InvalidStudentException $e) {
             report($e);
             return back()->withError(
@@ -54,36 +46,25 @@ class GradingController extends Controller
         }
     }
 
+
     /**
      * Store a newly created grading in storage.
      *
      * @param  \App\Course $course
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
+     * @throws App\Exceptions\UniIdentifierException
+     * @throws App\Exceptions\InvalidStudentException
      */
-    public function store(Course $course, Request $request)
+    public function store(Course $course)
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
+        $this->authorizeRequest('admin');
 
-        $validationErrorMsg = [
-            'uni_identifier.required' => 'Bitte ein Unikennzeichen angeben.',
-            'grade.required' => 'Bitte eine Note eintragen',
-            'grade.regex' => 'Keine gültige Note.'
-        ];
-        $attributes = $request->validate([
-            'uni_identifier' => 'required',
-            'grade' => ['required', 'regex:/^[1-3][.][037]$|^[45][.]0$/']
-        ], $validationErrorMsg);
+        $attributes = $this->validateRequest();
 
         try {
-            // first check if already graded, so you don't have to decrypt all students
+            // first check if already graded in the course, so you don't have to decrypt all students
             if ($course->isGraded($attributes['uni_identifier'])) {
-                if ($request->ajax()) {
+                if (request()->ajax()) {
                     return response()->json([
                         'studentGraded' => true,
                         'uni_identifier' => $attributes['uni_identifier']
@@ -94,14 +75,14 @@ class GradingController extends Controller
                         $attributes['uni_identifier'] .
                         ' wurde bereits benotet'
                     );
-                    return redirect("courses/$course->id");
+                    return redirect($course->path());
                 }
             }
 
             $student = Student::findOrCreate($attributes['uni_identifier']);
             $grade = $course->gradeStudent($student, $attributes['grade']);
         } catch (UniIdentifierException $e) {
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return response()->json([
                     'msg' => $e->getMessage(),
                     'exception' => true
@@ -111,7 +92,7 @@ class GradingController extends Controller
         } catch (InvalidStudentException $e) {
             report($e);
             $msg = 'Fehler in der Datenbank. Kontaktieren Sie den Administrator.';
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return response()->json([
                     'msg' => $msg,
                     'exception' => true
@@ -120,7 +101,7 @@ class GradingController extends Controller
             return back()->withError($msg)->withInput();
         }
 
-        if ($request->ajax()) {
+        if (request()->ajax()) {
             return response()->json([
                     'id' => $grade->id,
                     'uni_identifier' => $attributes['uni_identifier'],
@@ -128,7 +109,7 @@ class GradingController extends Controller
                 ]);
         } else {
             session()->flash('message', $attributes['uni_identifier'] . ' benotet');
-            return redirect("courses/$course->id");
+            return redirect($course->path());
         }
     }
 
@@ -137,36 +118,30 @@ class GradingController extends Controller
      *
      * @param  \App\Grading $grading
      * @return \Illuminate\Http\Response
+     * @throws App\Exceptions\InvalidStudentException
      */
     public function destroy(Grading $grading)
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!(ShibbAuth::authorize('mitarbeiter') ||
-            ShibbAuth::authorize('student'))) {
-            abort(403);
-        }
+        $this->authorizeRequest('student');
+
         try {
             $uni_identifier = $grading->decryptUniIdentifier(true);
         } catch (InvalidStudentException $e) {
             report($e);
             $msg = 'Fehler in der Datenbank. Kontaktieren Sie den' .
                 ' Administrator.';
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return response()->json([
                     'msg' => $msg,
                     'exception' => true
                 ]);
             }
-            return back()->withError($msg)->withInput();
+            return back()->withErrors($msg)->withInput();
         }
-        if (!env('APP_DEBUG')) {
-            // students are only allowed to delete there own gradings
-            if (!ShibbAuth::authorize('mitarbeiter')) {
-                if ($_SERVER['REMOTE_USER'] != $uni_identifier) {
-                    abort(403);
-                }
+        // students are only allowed to delete there own gradings
+        if ($this->authorization() !== 'admin') {
+            if ($_SERVER['REMOTE_USER'] != $uni_identifier) {
+                abort(403);
             }
         }
         if (request()->ajax()) {
@@ -190,25 +165,22 @@ class GradingController extends Controller
     /**
      * Imports gradings for a course from a csv file.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  \App\Course $course
      *
      * @return \Illuminate\Http\Response
+     * @throws App\Exceptions\UniIdentifierException
+     * @throws \Exception
      */
-    public function csvImport(Request $request, Course $course)
+    public function csvImport(Course $course)
     {
-        if (!ShibbAuth::isAuthenticated()) {
-            return view('login');
-        }
-        if (!ShibbAuth::authorize('mitarbeiter')) {
-            abort(403);
-        }
-        $validator = Validator::make($request->all(), [
+        $this->authorizeRequest('admin');
+
+        $validator = Validator::make(request()->all(), [
             'file' => 'required'
         ]);
 
         if ($validator->fails()) {
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return response()->json([
                     'exception' => true,
                     'msg' => 'Datei nicht gefunden.'
@@ -216,17 +188,16 @@ class GradingController extends Controller
             }
             return redirect()->back()->withErrors($validator);
         }
-        $file = $request->file('file');
+        $file = request()->file('file');
         if ($file->getClientOriginalExtension() !== "csv" &&
             $file->getMimeType() !== "text/csv") {
-            if ($request->ajax()) {
+            if (request()->ajax()) {
                 return response()->json([
                     'errors' => 'Keine .csv Datei.'
                 ]);
             }
             return redirect()->back()->withErrors('Keine .csv Datei.');
         }
-
         $csvData = rtrim(file_get_contents($file));
         $rows = array_map('str_getcsv', explode("\n", $csvData));
         $header = array('uni_identifier', 'grade');
@@ -284,13 +255,13 @@ class GradingController extends Controller
                 $errors[] = $uni_identifier . ' ist bereits benotet.';
             }
         }
-        if ($request->ajax()) {
+        if (request()->ajax()) {
             return response()->json([
                 'errors' => $errors,
                 'gradings' => $gradings
             ]);
         } else {
-            return redirect("courses/$course->id")->withErrors($errors);
+            return redirect($course->path())->withErrors($errors);
         }
     }
 
@@ -304,5 +275,23 @@ class GradingController extends Controller
         if ($student->grades->isEmpty()) {
             $student->delete();
         }
+    }
+
+    /**
+     * Validates a form post request for gradings.
+     * @return array Returns either the validated attributes or the validation errors.
+     */
+    protected function validateRequest()
+    {
+        $validationErrorMsg = [
+            'uni_identifier.required' => 'Bitte ein Unikennzeichen angeben.',
+            'grade.required' => 'Bitte eine Note eintragen',
+            'grade.regex' => 'Keine gültige Note.'
+        ];
+
+        return request()->validate([
+            'uni_identifier' => 'required',
+            'grade' => ['required', 'regex:/^[1-3][.][037]$|^[45][.]0$/']
+        ], $validationErrorMsg);
     }
 }

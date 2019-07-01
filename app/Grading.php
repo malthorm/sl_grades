@@ -16,6 +16,7 @@ class Grading extends Model
      *
      * @param bool $needsReturnValue
      * @retrun mixed (null|string)
+     * @throws App\Exceptions\InvalidStudentException
      */
     public function decryptUniIdentifier(bool $needsReturnValue = false)
     {
@@ -33,7 +34,7 @@ class Grading extends Model
 
     /*
      * Decrypts the grade of the model.
-     *
+     * @throws App\Exceptions\InvalidGradingException
      */
     public function decryptGrade()
     {
@@ -62,53 +63,11 @@ class Grading extends Model
     }
 
     /**
-     * Count the number of times a student was graded
-     * in a course based on the same module.
-     *
-     * @param App\Module $module
-     * @param int $studentId
-     * @return int
+     * Gets its relative path.
+     * @return string
      */
-    public function countAttempts($module, $studentId)
+    public function path()
     {
-        return count($this->attempts($module, $studentId));
-    }
-
-    /**
-     * Checks if the gradings is the latest attempt in a module.
-     *
-     * @param App\Module $module
-     * @param int $studentId
-     * @return bool
-     */
-    public function islatestAttempt($module, $studentId)
-    {
-        $attempts = $this->attempts($module, $studentId);
-        foreach ($attempts as $attempt) {
-            if ($this->id < $attempt->id) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Gets all attempts a student has made in a given module.
-     *
-     * @param App\Module $module
-     * @param int $studentId
-     * @return Illuminate\Support\Collection
-     */
-    private function attempts($module, $studentId)
-    {
-        $courseIds = array();
-        foreach ($module->courses as $course) {
-            array_push($courseIds, $course->id);
-        }
-        $attempts = Grading::whereIn('course_id', $courseIds)
-            ->where('student_id', $studentId)
-            ->get()
-        ;
-        return $attempts;
+        return "grades/{$this->id}";
     }
 }

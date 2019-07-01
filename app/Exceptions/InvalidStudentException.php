@@ -2,6 +2,9 @@
 
 namespace App\Exceptions;
 
+/**
+ * Most likely a uni_identifer has been stored unencrypted in the db.
+ */
 class InvalidStudentException extends \Exception
 {
     /**
