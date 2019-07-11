@@ -14,7 +14,6 @@
 $app = new Illuminate\Foundation\Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );
-    // realpath(__DIR__ . '/../')
 
 // for compatbility with personal uni homepage
 if (env('PUBLIC_PATH') == 'public_html') {

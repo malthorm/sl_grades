@@ -1,6 +1,20 @@
 AuthType shibboleth
 ShibRequireSession On
+Require shib-attr affiliation Mitarbeiter@tu-chemnitz.de Student@tu-chemnitz.de
 
-Require user malth
+RewriteEngine On
+# Rewrite Base /
+# Handle Front Controller...
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteRule ^(.*)$ index.php/$1  [L]
 
+# Redirect Trailing Slashes If Not A Folder...
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} (.+)/$
+RewriteRule ^ %1 [L,R=301]
 
+# Handle Front Controller...
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]
